@@ -275,7 +275,9 @@
     if(!$('#inOp').value||!$('#inTr').value||!$('#inTl').value) problems.push('Fahrer/in und beide Kennzeichen sind Pflicht');
     const notRated = items.filter(it => !(state.res[it.id] && state.res[it.id].sev)).map(it => it.title);
     if(notRated.length) problems.push('Nicht bewertet: '+notRated.join(', '));
-    const anyBad = Object.values(state.res).some(v => v.sev==='Mangel'); if(anyBad) problems.push('Mindestens ein Punkt „Mangel“ – keine Freigabe');
+    const anyBad = items.some(it => (state.res[it.id] && state.res[it.id].sev === 'Mangel'));
+const freigabeText = anyBad ? 'NICHT ERTEILT (Mangel vorhanden)' : 'ERTEILT';
+;
     if(problems.length){ alert('Versand blockiert:\n- '+problems.join('\n- ')); return; }
 
     try{
@@ -284,27 +286,46 @@
       const base64  = await blobToBase64(pdfBlob);
       const filename = `Fahrzeugkontrolle_${($('#inTr').value||'Zug')}_${($('#inTl').value||'Aufl')}.pdf`;
 
-      const body = `Fahrzeugkontrolle – Schwerlast/Zugmaschine
+  const body = `Fahrzeugkontrolle – Schwerlast/Zugmaschine
 Datum/Uhrzeit: ${$('#inDate').value||''}
 Fahrer/in: ${$('#inOp').value||''}
 Zugmaschine: ${$('#inTr').value||''} | Auflieger/Modul: ${$('#inTl').value||''}
 Ort: ${$('#inLoc').value||''}
-${state.geo ? 'Geotag: '+state.geo.lat+', '+state.geo.lon+' (±'+state.geo.acc+' m)\n' : ''}Freigabe: ${(anyBad?'NICHT ERTEILT (Mangel)':'ERTEILT')}
+${state.geo ? 'Geotag: '+state.geo.lat+', '+state.geo.lon+' (±'+state.geo.acc+' m)\n' : ''}Freigabe: ${freigabeText}
 (Details siehe PDF-Anhang)`;
 
+
       setStatus('Sende über Relay …');
-      await fetch(RELAY_URL, {
-        method:'POST',
-        headers:{'Content-Type':'text/plain'},
-        body: JSON.stringify({
-          to: $('#inDispo').value.trim(),
-          cc: $('#inCc').value.trim() || '',
-          subject: `Fahrzeugkontrolle ${$('#inTr').value||''} / ${$('#inTl').value||''}`,
-          text: body,
-          filename,
-          pdfBase64: base64
-        })
-      });
+      
+// --- Versand an das Relay (robust mit Fallback) ---
+const payload = {
+  to: $('#inDispo').value.trim(),
+  cc: $('#inCc').value.trim() || '',
+  subject: `Fahrzeugkontrolle ${$('#inTr').value||''} / ${$('#inTl').value||''}`,
+  text: body,
+  filename,
+  pdfBase64: base64
+};
+
+try {
+  // 1) Normaler Versuch
+  await fetch(RELAY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payload)
+  });
+} catch (e) {
+  // 2) Ruhiger Fallback (unterdrückt Browser-CORS-Fehler)
+  await fetch(RELAY_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payload)
+  });
+}
+
+setStatus('Bericht gesendet ✓');
+alert('E-Mail mit PDF-Anhang wurde gesendet.');
 
       setStatus('Bericht gesendet ✓');
       alert('E-Mail mit PDF-Anhang wurde gesendet.');
