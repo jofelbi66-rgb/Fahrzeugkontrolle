@@ -270,95 +270,105 @@
   const blobToBase64 = blob => new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(blob); });
 
   async function onMail(){
-    async function onMail() {
-  const problems = [];
-  if (!$('#inDispo').value) problems.push('Dispo-E-Mail fehlt');
-  if (!$('#inOp').value || !$('#inTr').value || !$('#inTl').value)
-    problems.push('Fahrer/in und beide Kennzeichen sind Pflicht');
+    const problems=[];
+    if(!$('#inDispo').value) problems.push('Dispo-E-Mail fehlt');
+    if(!$('#inOp').value||!$('#inTr').value||!$('#inTl').value) problems.push('Fahrer/in und beide Kennzeichen sind Pflicht');
+    const notRated = items.filter(it => !(state.res[it.id] && state.res[it.id].sev)).map(it => it.title);
+    if(notRated.length) problems.push('Nicht bewertet: '+notRated.join(', '));
+    const anyBad = items.some(it => (state.res[it.id] && state.res[it.id].sev === 'Mangel'));
+const freigabeText = anyBad ? 'NICHT ERTEILT (Mangel vorhanden)' : 'ERTEILT';
+;
+    if(problems.length){ alert('Versand blockiert:\n- '+problems.join('\n- ')); return; }
 
-  const notRated = items.filter(it => !(state.res[it.id] && state.res[it.id].sev)).map(it => it.title);
-  if (notRated.length)
-    problems.push('Nicht bewertet: ' + notRated.join(', '));
+    try{
+      setStatus('Erzeuge PDF …');
+      const pdfBlob = buildPdf();
+      const base64  = await blobToBase64(pdfBlob);
+      const filename = `Fahrzeugkontrolle_${($('#inTr').value||'Zug')}_${($('#inTl').value||'Aufl')}.pdf`;
 
-  if (problems.length) {
-    alert('Versand blockiert:\n- ' + problems.join('\n- '));
-    return;
-  }
+  const body = `Fahrzeugkontrolle – Schwerlast/Zugmaschine
+Datum/Uhrzeit: ${$('#inDate').value||''}
+Fahrer/in: ${$('#inOp').value||''}
+Zugmaschine: ${$('#inTr').value||''} | Auflieger/Modul: ${$('#inTl').value||''}
+Ort: ${$('#inLoc').value||''}
+${state.geo ? 'Geotag: '+state.geo.lat+', '+state.geo.lon+' (±'+state.geo.acc+' m)\n' : ''}Freigabe: ${freigabeText}
+(Details siehe PDF-Anhang)`;
 
-  // --- MAIL-ZUSAMMENFASSUNG START ---
-  const anyBad = items.some(it => (state.res[it.id] && state.res[it.id].sev === 'Mangel'));
-  const freigabeText = anyBad ? 'NICHT ERTEILT (Mangel vorhanden)' : 'ERTEILT';
 
-  const lines = [];
-  lines.push(`Datum/Uhrzeit: ${$('#inDate').value || ''}`);
-  lines.push(`Fahrer/in: ${$('#inOp').value || ''}`);
-  lines.push(`Zugmaschine: ${$('#inTr').value || ''} | Auflieger/Modul: ${$('#inTl').value || ''}`);
-  if ($('#inLoc').value) lines.push(`Ort: ${$('#inLoc').value}`);
-  if (state.geo) lines.push(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
+      setStatus('Sende über Relay …');
+      
+// --- Versand an das Relay (robust mit Fallback) ---
+// --- Zusammenfassung (Text + HTML) ---
+const lines = [];
+lines.push(`Datum/Uhrzeit: ${$('#inDate').value || ''}`);
+lines.push(`Fahrer/in: ${$('#inOp').value || ''}`);
+lines.push(`Zugmaschine: ${$('#inTr').value || ''} | Auflieger/Modul: ${$('#inTl').value || ''}`);
+if ($('#inLoc').value) lines.push(`Ort: ${$('#inLoc').value}`);
+if (state.geo) lines.push(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
 
-  const checkRows = items.map(it => {
-    const r = state.res[it.id] || {};
-    const sev = r.sev || '-';
-    const note = (r.note && r.note.trim()) ? ` – ${r.note.trim()}` : '';
-    return `• [${sev}] ${it.title}${note}`;
-  }).join('\n');
+const anyBad = items.some(it => (state.res[it.id] && state.res[it.id].sev === 'Mangel'));
+const freigabeText = anyBad ? 'NICHT ERTEILT (Mangel vorhanden)' : 'ERTEILT';
 
-  const bodyText =
-    `Fahrzeugkontrolle – Schwerlast/Zugmaschine\n` +
-    lines.join('\n') + `\n\n` +
-    `Freigabe: ${freigabeText}\n\n` +
-    `Checkpunkte:\n${checkRows}\n\n` +
-    `(Details siehe PDF-Anhang)`;
+// Checkliste kompakt
+const checkRows = items.map(it => {
+  const r = state.res[it.id] || {};
+  const sev = r.sev || '-';
+  const note = (r.note && r.note.trim()) ? ` – ${r.note.trim()}` : '';
+  return `• [${sev}] ${it.title}${note}`;
+}).join('\n');
 
-  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const bodyText =
+  `Fahrzeugkontrolle – Schwerlast/Zugmaschine\n` +
+  lines.join('\n') + `\n\n` +
+  `Freigabe: ${freigabeText}\n\n` +
+  `Checkpunkte:\n${checkRows}\n\n` +
+  `(Details siehe PDF-Anhang)`;
 
-  const bodyHtml =
-    `<div style="font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;font-size:14px;line-height:1.5">
-       <h2 style="margin:0 0 8px 0">Fahrzeugkontrolle – Schwerlast/Zugmaschine</h2>
-       <div>${lines.map(s => `<div>${esc(s)}</div>`).join('')}</div>
-       <div style="margin:10px 0 0 0"><strong>Freigabe: ${esc(freigabeText)}</strong></div>
-       <div style="margin:10px 0 4px 0"><strong>Checkpunkte:</strong></div>
-       <ul style="margin:0;padding-left:18px">
-         ${items.map(it => {
-           const r = state.res[it.id] || {};
-           const sev = r.sev || '-';
-           const note = (r.note && r.note.trim()) ? ' – ' + esc(r.note.trim()) : '';
-           return `<li>[${esc(sev)}] ${esc(it.title)}${note}</li>`;
-         }).join('')}
-       </ul>
-       <div style="margin-top:10px">(Details siehe PDF-Anhang)</div>
-     </div>`;
+// HTML-Version (schön formatiert)
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const bodyHtml =
+  `<div style="font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;font-size:14px;line-height:1.5">
+     <h2 style="margin:0 0 8px 0">Fahrzeugkontrolle – Schwerlast/Zugmaschine</h2>
+     <div>${lines.map(s => `<div>${esc(s)}</div>`).join('')}</div>
+     <div style="margin:10px 0 0 0"><strong>Freigabe: ${esc(freigabeText)}</strong></div>
+     <div style="margin:10px 0 4px 0"><strong>Checkpunkte:</strong></div>
+     <ul style="margin:0;padding-left:18px">
+       ${items.map(it => {
+         const r = state.res[it.id] || {};
+         const sev = r.sev || '-';
+         const note = (r.note && r.note.trim()) ? ` – ${esc(r.note.trim())}` : '';
+         return `<li>[${esc(sev)}] ${esc(it.title)}${note}</li>`;
+       }).join('')}
+     </ul>
+     <div style="margin-top:10px">(Details siehe PDF-Anhang)</div>
+   </div>`;
+const payload = {
+  to: $('#inDispo').value.trim(),
+  cc: $('#inCc').value.trim() || '',
+  subject: `Fahrzeugkontrolle ${$('#inTr').value||''} / ${$('#inTl').value||''}`,
+  text: bodyText,   // Text-Version
+  html: bodyHtml,   // HTML-Version
+  filename,
+  pdfBase64: base64
+};
 
-  const payload = {
-    to: $('#inDispo').value.trim(),
-    cc: $('#inCc').value.trim() || '',
-    subject: `Fahrzeugkontrolle ${$('#inTr').value||''} / ${$('#inTl').value||''}`,
-    text: bodyText,
-    html: bodyHtml,
-    filename,
-    pdfBase64: base64
-  };
 
-  try {
-    await fetch(RELAY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-  } catch (e) {
-    await fetch(RELAY_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-  }
 
-  setStatus('Bericht gesendet ✓');
-  alert('E-Mail mit PDF-Anhang wurde gesendet.');
-  // --- MAIL-ZUSAMMENFASSUNG ENDE ---
-}
-
+try {
+  // 1) Normaler Versuch
+  await fetch(RELAY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payload)
+  });
+} catch (e) {
+  // 2) Ruhiger Fallback (unterdrückt Browser-CORS-Fehler)
+  await fetch(RELAY_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payload)
+  });
 }
 
 setStatus('Bericht gesendet ✓');
@@ -375,4 +385,3 @@ alert('E-Mail mit PDF-Anhang wurde gesendet.');
 </script>
 </body>
 </html>
-
