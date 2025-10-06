@@ -270,6 +270,10 @@
   const blobToBase64 = blob => new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(blob); });
 
   async function onMail(){
+    // Freigabe korrekt ermitteln – MUSS vor jeder Nutzung stehen!
+const anyBad = items.some(it => (state.res[it.id] && state.res[it.id].sev === 'Mangel'));
+const freigabeText = anyBad ? 'NICHT ERTEILT (Mangel vorhanden)' : 'ERTEILT';
+
     const problems=[];
     if(!$('#inDispo').value) problems.push('Dispo-E-Mail fehlt');
     if(!$('#inOp').value||!$('#inTr').value||!$('#inTl').value) problems.push('Fahrer/in und beide Kennzeichen sind Pflicht');
