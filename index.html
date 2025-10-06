@@ -280,7 +280,7 @@ const freigabeText = anyBad ? 'NICHT ERTEILT (Mangel vorhanden)' : 'ERTEILT';
     const notRated = items.filter(it => !(state.res[it.id] && state.res[it.id].sev)).map(it => it.title);
     if(notRated.length) problems.push('Nicht bewertet: '+notRated.join(', '));
     const anyBad = items.some(it => (state.res[it.id] && state.res[it.id].sev === 'Mangel'));
-const freigabeText = anyBad ? 'NICHT ERTEILT (Mangel vorhanden)' : 'ERTEILT';
+
 ;
     if(problems.length){ alert('Versand blockiert:\n- '+problems.join('\n- ')); return; }
 
@@ -311,7 +311,7 @@ if ($('#inLoc').value) lines.push(`Ort: ${$('#inLoc').value}`);
 if (state.geo) lines.push(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
 
 const anyBad = items.some(it => (state.res[it.id] && state.res[it.id].sev === 'Mangel'));
-const freigabeText = anyBad ? 'NICHT ERTEILT (Mangel vorhanden)' : 'ERTEILT';
+
 
 // Checkliste kompakt
 const checkRows = items.map(it => {
