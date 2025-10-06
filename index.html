@@ -342,15 +342,17 @@ const bodyHtml =
      </ul>
      <div style="margin-top:10px">(Details siehe PDF-Anhang)</div>
    </div>`;
-
 const payload = {
   to: $('#inDispo').value.trim(),
   cc: $('#inCc').value.trim() || '',
   subject: `Fahrzeugkontrolle ${$('#inTr').value||''} / ${$('#inTl').value||''}`,
-  text: body,
+  text: bodyText,   // Text-Version
+  html: bodyHtml,   // HTML-Version
   filename,
   pdfBase64: base64
 };
+
+
 
 try {
   // 1) Normaler Versuch
