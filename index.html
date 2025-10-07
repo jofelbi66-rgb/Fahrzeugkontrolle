@@ -294,14 +294,37 @@
     // --- Freigabe zuerst berechnen (nur EINMAL und VOR jeder Nutzung!) ---
     const anyBad = items.some(it => (state.res[it.id] && state.res[it.id].sev === 'Mangel'));
     const freigabeText = anyBad ? 'NICHT ERTEILT (Mangel vorhanden)' : 'ERTEILT';
+// Robuste Werteleser (Input/Text/LocalStorage)
+const getEl = (id) => document.querySelector(id.startsWith('#') ? id : '#'+id);
+const fromLS = (k) => (localStorage.getItem(k) || '').trim();
 
-    // Kopfzeilen
-    const lines = [];
-    lines.push(`Datum/Uhrzeit: ${$('#inDate').value || ''}`);
-    lines.push(`Fahrer/in: ${$('#inOp').value || ''}`);
-    lines.push(`Zugmaschine: ${$('#inTr').value || ''} | Auflieger/Modul: ${$('#inTl').value || ''}`);
-    if ($('#inLoc').value) lines.push(`Ort: ${$('#inLoc').value}`);
-    if (state.geo) lines.push(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
+const val = (id, lsKey = null) => {
+  const el = getEl(id);
+  const v = el ? (('value' in el ? el.value : el.textContent) || '').trim() : '';
+  if (v) return v;
+  if (lsKey) {
+    const w = fromLS(lsKey);
+    if (w) return w;
+  }
+  return '';
+};
+
+   // Kopfzeilen (robust)
+const dt = val('inDate', 'date');
+const op = val('inOp',   'op');
+const tr = val('inTr',   'tr');
+const tl = val('inTl',   'tl');
+const loc = val('inLoc', 'loc');
+
+const lines = [];
+lines.push(`Datum/Uhrzeit: ${dt}`);
+lines.push(`Fahrer/in: ${op}`);
+lines.push(`Zugmaschine: ${tr} | Auflieger/Modul: ${tl}`);
+if (loc) lines.push(`Ort: ${loc}`);
+if (state.geo) lines.push(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
+
+// Betreff ab jetzt stabil
+const subject = `Fahrzeugkontrolle ${tr || 'Zug'} / ${tl || 'Aufl'}`;
 
     // Checkliste kompakt
     const checkRows = items.map(it => {
@@ -344,7 +367,8 @@ ${checkRows}
     const payload = {
       to: $('#inDispo').value.trim(),
       cc: $('#inCc').value.trim() || '',
-      subject: `Fahrzeugkontrolle ${$('#inTr').value||''} / ${$('#inTl').value||''}`,
+     subject,
+
       text: bodyText,
       html: bodyHtml,
       filename,
