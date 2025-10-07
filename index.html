@@ -311,19 +311,72 @@ async function onMail() {
     const anyBad = items.some(it => (state.res[it.id] && state.res[it.id].sev === 'Mangel'));
     const freigabeText = anyBad ? 'NICHT ERTEILT (Mangel vorhanden)' : 'ERTEILT';
 
-    // ---- Kopfzeilen (robust lesen)
-    const dt  = val('inDate', 'date');
-    const op  = val('inOp',   'op');
-    const tr  = val('inTr',   'tr');
-    const tl  = val('inTl',   'tl');
-    const loc = val('inLoc',  'loc');
+    // ---- Super-robuste Grabber ----
+const $id = (x) => document.getElementById(x);
+const fromLS = (k) => (localStorage.getItem(k) || '').trim();
 
-    const lines = [];
-    lines.push(`Datum/Uhrzeit: ${dt || '-'}`);
-    lines.push(`Fahrer/in: ${op || '-'}`);
-    lines.push(`Zugmaschine: ${tr || '-'} | Auflieger/Modul: ${tl || '-'}`);
-    if (loc) lines.push(`Ort: ${loc}`);
-    if (state.geo) lines.push(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
+function grabOne(selector) {
+  const el = document.querySelector(selector);
+  if (!el) return '';
+  const raw = ('value' in el ? el.value : el.textContent);
+  return (raw || '').trim();
+}
+
+function grabField(candidates, lsKey=null) {
+  // 1) by id
+  for (const k of candidates) {
+    const el = $id(k);
+    if (el) {
+      const v = ('value' in el ? el.value : el.textContent) || '';
+      if (v.trim()) return v.trim();
+    }
+  }
+  // 2) by name
+  for (const k of candidates) {
+    const v = grabOne(`[name="${k}"]`);
+    if (v) return v;
+  }
+  // 3) by data-field / data-id
+  for (const k of candidates) {
+    const v = grabOne(`[data-field="${k}"], [data-id="${k}"]`);
+    if (v) return v;
+  }
+  // 4) LocalStorage Fallback
+  if (lsKey) {
+    const v = fromLS(lsKey);
+    if (v) return v;
+  }
+  return '';
+}
+
+// ---- Kopfzeilen robust holen ----
+// Mappings: gleiche Bedeutung, andere mögliche Schlüssel
+const dt = grabField(['inDate','date','datum'], 'date');
+const op = grabField(['inOp','op','fahrer','driver','operator'], 'op');
+const tr = grabField(['inTr','tr','zug','tractor','unit'], 'tr');
+const tl = grabField(['inTl','tl','aufl','trailer','module'], 'tl');
+const loc = grabField(['inLoc','loc','ort','location','place'], 'loc');
+
+const lines = [];
+lines.push(`Datum/Uhrzeit: ${dt || '-'}`);
+lines.push(`Fahrer/in: ${op || '-'}`);
+lines.push(`Zugmaschine: ${tr || '-'} | Auflieger/Modul: ${tl || '-'}`);
+if (loc) lines.push(`Ort: ${loc}`);
+if (state.geo) lines.push(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
+
+// stabiler Betreff
+const subject = `Fahrzeugkontrolle ${tr || 'Zug'} / ${tl || 'Aufl'}`;
+
+// --- Temporäres Debug-Fenster (einmal prüfen, danach können wir es entfernen) ---
+alert(
+  'DEBUG Felder für Mail:\n' +
+  `Datum: ${dt}\n` +
+  `Fahrer: ${op}\n` +
+  `Zug: ${tr}\n` +
+  `Auflieger: ${tl}\n` +
+  `Ort: ${loc}`
+);
+
 
     // ---- Checkliste kompakt
     const checkRows = items.map(it => {
