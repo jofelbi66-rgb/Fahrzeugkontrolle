@@ -1,3 +1,4 @@
+<link rel="icon" type="image/png" sizes="512x512" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <meta name="theme-color" content="#0076BC">
 <meta name="apple-mobile-web-app-title" content="Check dein Fahrzeug">
@@ -269,40 +270,92 @@
   const blobToBase64 = blob => new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(blob); });
 
 async function onMail() {
+  const problems = [];
   const $id = (x) => document.getElementById(x);
 
-  // --- Pflichtprüfungen
-  const problems = [];
+  // ---- Pflichtprüfungen
   if (!$id('inDispo')?.value) problems.push('Dispo-E-Mail fehlt');
-  if (!$id('inOp')?.value || !$id('inTr')?.value || !$id('inTl')?.value) {
+  if (!$id('inOp')?.value || !$id('inTr')?.value || !$id('inTl')?.value)
     problems.push('Fahrer/in und beide Kennzeichen sind Pflicht');
-  }
+
   const notRated = items
     .filter(it => !(state.res[it.id] && state.res[it.id].sev))
     .map(it => it.title);
   if (notRated.length) problems.push('Nicht bewertet: ' + notRated.join(', '));
-  if (problems.length) { alert('Versand blockiert:\n- ' + problems.join('\n- ')); return; }
+
+  if (problems.length) {
+    alert('Versand blockiert:\n- ' + problems.join('\n- '));
+    return;
+  }
+
+  // ---- Helfer: Werte robust lesen (Input → Text → LocalStorage)
+  const fromLS = (k) => (localStorage.getItem(k) || '').trim();
+  const val = (id, lsKey=null) => {
+    const el = $id(id);
+    const v = el ? (('value' in el ? el.value : el.textContent) || '').trim() : '';
+    if (v) return v;
+    if (lsKey) {
+      const w = fromLS(lsKey);
+      if (w) return w;
+    }
+    return '';
+  };
 
   try {
-    // --- 1) Freigabe ermitteln
+    setStatus('Erzeuge PDF …');
+    const pdfBlob  = buildPdf();
+    const base64   = await blobToBase64(pdfBlob);
+    const filename = `Fahrzeugkontrolle_${(val('inTr','tr')||'Zug')}_${(val('inTl','tl')||'Aufl')}.pdf`;
+
+    // ---- Freigabe zuerst berechnen
     const anyBad = items.some(it => (state.res[it.id] && state.res[it.id].sev === 'Mangel'));
     const freigabeText = anyBad ? 'NICHT ERTEILT (Mangel vorhanden)' : 'ERTEILT';
 
-    // --- 2) Werte JETZT lesen (vor dem PDF!)
-    const f   = (id) => ($id(id)?.value ?? '').trim();
-    const dt  = f('inDate');
-    const op  = f('inOp');
-    const tr  = f('inTr');
-    const tl  = f('inTl');
-    const loc = f('inLoc');
+    // ---- Super-robuste Grabber ----
+const $id = (x) => document.getElementById(x);
+const fromLS = (k) => (localStorage.getItem(k) || '').trim();
 
-   // --- 3) Kopfzeilen & Betreff  (Werte zuerst lesen!)
-const f   = (id) => (document.getElementById(id)?.value ?? '').trim();
-const dt  = f('inDate');
-const op  = f('inOp');
-const tr  = f('inTr');
-const tl  = f('inTl');
-const loc = f('inLoc');
+function grabOne(selector) {
+  const el = document.querySelector(selector);
+  if (!el) return '';
+  const raw = ('value' in el ? el.value : el.textContent);
+  return (raw || '').trim();
+}
+
+function grabField(candidates, lsKey=null) {
+  // 1) by id
+  for (const k of candidates) {
+    const el = $id(k);
+    if (el) {
+      const v = ('value' in el ? el.value : el.textContent) || '';
+      if (v.trim()) return v.trim();
+    }
+  }
+  // 2) by name
+  for (const k of candidates) {
+    const v = grabOne(`[name="${k}"]`);
+    if (v) return v;
+  }
+  // 3) by data-field / data-id
+  for (const k of candidates) {
+    const v = grabOne(`[data-field="${k}"], [data-id="${k}"]`);
+    if (v) return v;
+  }
+  // 4) LocalStorage Fallback
+  if (lsKey) {
+    const v = fromLS(lsKey);
+    if (v) return v;
+  }
+  return '';
+}
+
+// ---- Kopfzeilen robust holen ----
+// Mappings: gleiche Bedeutung, andere mögliche Schlüssel
+const dt = grabField(['inDate','date','datum'], 'date');
+const op = grabField(['inOp','op','fahrer','driver','operator'], 'op');
+const tr = grabField(['inTr','tr','zug','tractor','unit'], 'tr');
+const tl = grabField(['inTl','tl','aufl','trailer','module'], 'tl');
+const loc = grabField(['inLoc','loc','ort','location','place'], 'loc');
 
 const lines = [];
 lines.push(`Datum/Uhrzeit: ${dt || '-'}`);
@@ -310,18 +363,33 @@ lines.push(`Fahrer/in: ${op || '-'}`);
 lines.push(`Zugmaschine: ${tr || '-'} | Auflieger/Modul: ${tl || '-'}`);
 if (loc) lines.push(`Ort: ${loc}`);
 if (state.geo) lines.push(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
+
+// stabiler Betreff
 const subject = `Fahrzeugkontrolle ${tr || 'Zug'} / ${tl || 'Aufl'}`;
 
-// --- 4) Checkliste zusammenfassen
-const checkRows = items.map(it => {
-  const r = state.res[it.id] || {};
-  const sev = r.sev || '-';
-  const note = (r.note && r.note.trim()) ? ` – ${r.note.trim()}` : '';
-  return `• [${sev}] ${it.title}${note}`;
-}).join('\n');
+// --- Temporäres Debug-Fenster (einmal prüfen, danach können wir es entfernen) ---
+alert(
+  'DEBUG Felder für Mail:\n' +
+  `Datum: ${dt}\n` +
+  `Fahrer: ${op}\n` +
+  `Zug: ${tr}\n` +
+  `Auflieger: ${tl}\n` +
+  `Ort: ${loc}`
+);
 
-// --- 5) Mail-Text & HTML bauen (vollständig!)
-const bodyText = `Fahrzeugkontrolle – Schwerlast/Zugmaschine
+
+    // ---- Checkliste kompakt
+    const checkRows = items.map(it => {
+      const r = state.res[it.id] || {};
+      const sev = r.sev || '-';
+      const note = (r.note && r.note.trim()) ? ` – ${r.note.trim()}` : '';
+      return `• [${sev}] ${it.title}${note}`;
+    }).join('\n');
+
+    // ---- Text & HTML
+    const subject = `Fahrzeugkontrolle ${tr || 'Zug'} / ${tl || 'Aufl'}`;
+
+    const bodyText = `Fahrzeugkontrolle – Schwerlast/Zugmaschine
 ${lines.join('\n')}
 
 Freigabe: ${freigabeText}
@@ -331,32 +399,25 @@ ${checkRows}
 
 (Details siehe PDF-Anhang)`;
 
-const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
-const bodyHtml =
-  `<div style="font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;font-size:14px;line-height:1.5">
-     <h2 style="margin:0 0 8px 0">Fahrzeugkontrolle – Schwerlast/Zugmaschine</h2>
-     <div>${lines.map(s => `<div>${esc(s)}</div>`).join('')}</div>
-     <div style="margin:10px 0 0 0"><strong>Freigabe: ${esc(freigabeText)}</strong></div>
-     <div style="margin:10px 0 4px 0"><strong>Checkpunkte:</strong></div>
-     <ul style="margin:0;padding-left:18px">
-       ${items.map(it => {
-         const r = state.res[it.id] || {};
-         const sev = r.sev || '-';
-         const note = (r.note && r.note.trim()) ? ' – ' + esc(r.note.trim()) : '';
-         return `<li>[${esc(sev)}] ${esc(it.title)}${note}</li>`;
-       }).join('')}
-     </ul>
-     <div style="margin-top:10px">(Details siehe PDF-Anhang)</div>
-   </div>`;
+    const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+    const bodyHtml =
+      `<div style="font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;font-size:14px;line-height:1.5">
+         <h2 style="margin:0 0 8px 0">Fahrzeugkontrolle – Schwerlast/Zugmaschine</h2>
+         <div>${lines.map(s => `<div>${esc(s)}</div>`).join('')}</div>
+         <div style="margin:10px 0 0 0"><strong>Freigabe: ${esc(freigabeText)}</strong></div>
+         <div style="margin:10px 0 4px 0"><strong>Checkpunkte:</strong></div>
+         <ul style="margin:0;padding-left:18px">
+           ${items.map(it => {
+             const r = state.res[it.id] || {};
+             const sev = r.sev || '-';
+             const note = (r.note && r.note.trim()) ? ' – ' + esc(r.note.trim()) : '';
+             return `<li>[${esc(sev)}] ${esc(it.title)}${note}</li>`;
+           }).join('')}
+         </ul>
+         <div style="margin-top:10px">(Details siehe PDF-Anhang)</div>
+       </div>`;
 
-
-    // --- 6) JETZT das PDF erzeugen
-    setStatus('Erzeuge PDF …');
-    const pdfBlob  = buildPdf();
-    const base64   = await blobToBase64(pdfBlob);
-    const filename = `Fahrzeugkontrolle_${tr || 'Zug'}_${tl || 'Aufl'}.pdf`;
-
-    // --- 7) Payload und Versand
+    // ---- Payload & Versand
     const payload = {
       to: $id('inDispo').value.trim(),
       cc: ($id('inCc')?.value || '').trim(),
@@ -369,20 +430,20 @@ const bodyHtml =
 
     setStatus('Sende über Relay …');
 
-    // Lass hier deine bisherige Fetch-Variante – sie funktioniert mit deinem doPost:
-    await fetch(RELAY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' }, // das nutzt du bereits stabil
-      body: JSON.stringify(payload)
-    }).catch(async () => {
-      // ruhiger Fallback
+    try {
       await fetch(RELAY_URL, {
         method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-    });
+    } catch (e) {
+      await fetch(RELAY_URL, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(payload)
+});
+
+    }
 
     setStatus('Bericht gesendet ✓');
     alert('E-Mail mit PDF-Anhang wurde gesendet.');
@@ -392,7 +453,6 @@ const bodyHtml =
     alert('Fehler beim Versand: ' + (err?.message || err));
   }
 }
-
 
 })();
 </script>
