@@ -269,62 +269,43 @@
   const blobToBase64 = blob => new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(blob); });
 
 async function onMail() {
-  const problems = [];
   const $id = (x) => document.getElementById(x);
 
-  // ---- Pflichtprüfungen
+  // --- Pflichtprüfungen
+  const problems = [];
   if (!$id('inDispo')?.value) problems.push('Dispo-E-Mail fehlt');
-  if (!$id('inOp')?.value || !$id('inTr')?.value || !$id('inTl')?.value)
+  if (!$id('inOp')?.value || !$id('inTr')?.value || !$id('inTl')?.value) {
     problems.push('Fahrer/in und beide Kennzeichen sind Pflicht');
-
+  }
   const notRated = items
     .filter(it => !(state.res[it.id] && state.res[it.id].sev))
     .map(it => it.title);
   if (notRated.length) problems.push('Nicht bewertet: ' + notRated.join(', '));
-
-  if (problems.length) {
-    alert('Versand blockiert:\n- ' + problems.join('\n- '));
-    return;
-  }
-
-  // ---- Helfer: Werte robust lesen (Input → Text → LocalStorage)
-  const fromLS = (k) => (localStorage.getItem(k) || '').trim();
-  const val = (id, lsKey=null) => {
-    const el = $id(id);
-    const v = el ? (('value' in el ? el.value : el.textContent) || '').trim() : '';
-    if (v) return v;
-    if (lsKey) {
-      const w = fromLS(lsKey);
-      if (w) return w;
-    }
-    return '';
-  };
+  if (problems.length) { alert('Versand blockiert:\n- ' + problems.join('\n- ')); return; }
 
   try {
-    setStatus('Erzeuge PDF …');
-    const pdfBlob  = buildPdf();
-    const base64   = await blobToBase64(pdfBlob);
-    const filename = `Fahrzeugkontrolle_${(val('inTr','tr')||'Zug')}_${(val('inTl','tl')||'Aufl')}.pdf`;
-
-    // ---- Freigabe zuerst berechnen
+    // --- 1) Freigabe ermitteln
     const anyBad = items.some(it => (state.res[it.id] && state.res[it.id].sev === 'Mangel'));
     const freigabeText = anyBad ? 'NICHT ERTEILT (Mangel vorhanden)' : 'ERTEILT';
 
-    // ---- Kopfzeilen (robust lesen)
-    const dt  = val('inDate', 'date');
-    const op  = val('inOp',   'op');
-    const tr  = val('inTr',   'tr');
-    const tl  = val('inTl',   'tl');
-    const loc = val('inLoc',  'loc');
+    // --- 2) Werte JETZT lesen (vor dem PDF!)
+    const f   = (id) => ($id(id)?.value ?? '').trim();
+    const dt  = f('inDate');
+    const op  = f('inOp');
+    const tr  = f('inTr');
+    const tl  = f('inTl');
+    const loc = f('inLoc');
 
+    // --- 3) Kopfzeilen & Betreff
     const lines = [];
     lines.push(`Datum/Uhrzeit: ${dt || '-'}`);
     lines.push(`Fahrer/in: ${op || '-'}`);
     lines.push(`Zugmaschine: ${tr || '-'} | Auflieger/Modul: ${tl || '-'}`);
     if (loc) lines.push(`Ort: ${loc}`);
     if (state.geo) lines.push(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
+    const subject = `Fahrzeugkontrolle ${tr || 'Zug'} / ${tl || 'Aufl'}`;
 
-    // ---- Checkliste kompakt
+    // --- 4) Checkliste zusammenfassen
     const checkRows = items.map(it => {
       const r = state.res[it.id] || {};
       const sev = r.sev || '-';
@@ -332,9 +313,7 @@ async function onMail() {
       return `• [${sev}] ${it.title}${note}`;
     }).join('\n');
 
-    // ---- Text & HTML
-    const subject = `Fahrzeugkontrolle ${tr || 'Zug'} / ${tl || 'Aufl'}`;
-
+    // --- 5) Mail-Text & HTML bauen (bevor PDF gebaut wird!)
     const bodyText = `Fahrzeugkontrolle – Schwerlast/Zugmaschine
 ${lines.join('\n')}
 
@@ -363,7 +342,13 @@ ${checkRows}
          <div style="margin-top:10px">(Details siehe PDF-Anhang)</div>
        </div>`;
 
-    // ---- Payload & Versand
+    // --- 6) JETZT das PDF erzeugen
+    setStatus('Erzeuge PDF …');
+    const pdfBlob  = buildPdf();
+    const base64   = await blobToBase64(pdfBlob);
+    const filename = `Fahrzeugkontrolle_${tr || 'Zug'}_${tl || 'Aufl'}.pdf`;
+
+    // --- 7) Payload und Versand
     const payload = {
       to: $id('inDispo').value.trim(),
       cc: ($id('inCc')?.value || '').trim(),
@@ -376,20 +361,20 @@ ${checkRows}
 
     setStatus('Sende über Relay …');
 
-    try {
-      await fetch(RELAY_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-    } catch (e) {
+    // Lass hier deine bisherige Fetch-Variante – sie funktioniert mit deinem doPost:
+    await fetch(RELAY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' }, // das nutzt du bereits stabil
+      body: JSON.stringify(payload)
+    }).catch(async () => {
+      // ruhiger Fallback
       await fetch(RELAY_URL, {
         method: 'POST',
         mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(payload)
       });
-    }
+    });
 
     setStatus('Bericht gesendet ✓');
     alert('E-Mail mit PDF-Anhang wurde gesendet.');
@@ -399,6 +384,7 @@ ${checkRows}
     alert('Fehler beim Versand: ' + (err?.message || err));
   }
 }
+
 
 })();
 </script>
