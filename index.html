@@ -269,10 +269,13 @@
 
   const blobToBase64 = blob => new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(blob); });
 
-  async function onMail() {
+async function onMail() {
   const problems = [];
-  if (!$('#inDispo').value) problems.push('Dispo-E-Mail fehlt');
-  if (!$('#inOp').value || !$('#inTr').value || !$('#inTl').value)
+  const $id = (x) => document.getElementById(x);
+
+  // ---- Pflichtprüfungen
+  if (!$id('inDispo')?.value) problems.push('Dispo-E-Mail fehlt');
+  if (!$id('inOp')?.value || !$id('inTr')?.value || !$id('inTl')?.value)
     problems.push('Fahrer/in und beide Kennzeichen sind Pflicht');
 
   const notRated = items
@@ -285,51 +288,44 @@
     return;
   }
 
+  // ---- Helfer: Werte robust lesen (Input → Text → LocalStorage)
+  const fromLS = (k) => (localStorage.getItem(k) || '').trim();
+  const val = (id, lsKey=null) => {
+    const el = $id(id);
+    const v = el ? (('value' in el ? el.value : el.textContent) || '').trim() : '';
+    if (v) return v;
+    if (lsKey) {
+      const w = fromLS(lsKey);
+      if (w) return w;
+    }
+    return '';
+  };
+
   try {
     setStatus('Erzeuge PDF …');
     const pdfBlob  = buildPdf();
     const base64   = await blobToBase64(pdfBlob);
-    const filename = `Fahrzeugkontrolle_${($('#inTr').value||'Zug')}_${($('#inTl').value||'Aufl')}.pdf`;
+    const filename = `Fahrzeugkontrolle_${(val('inTr','tr')||'Zug')}_${(val('inTl','tl')||'Aufl')}.pdf`;
 
-    // --- Freigabe zuerst berechnen (nur EINMAL und VOR jeder Nutzung!) ---
+    // ---- Freigabe zuerst berechnen
     const anyBad = items.some(it => (state.res[it.id] && state.res[it.id].sev === 'Mangel'));
     const freigabeText = anyBad ? 'NICHT ERTEILT (Mangel vorhanden)' : 'ERTEILT';
-// Robuste Werteleser (Input/Text/LocalStorage)
-const getEl = (id) => document.querySelector(id.startsWith('#') ? id : '#'+id);
-const fromLS = (k) => (localStorage.getItem(k) || '').trim();
 
-const val = (id, lsKey = null) => {
-  const el = getEl(id);
-  const v = el ? (('value' in el ? el.value : el.textContent) || '').trim() : '';
-  if (v) return v;
-  if (lsKey) {
-    const w = fromLS(lsKey);
-    if (w) return w;
-  }
-  return '';
-};
+    // ---- Kopfzeilen (robust lesen)
+    const dt  = val('inDate', 'date');
+    const op  = val('inOp',   'op');
+    const tr  = val('inTr',   'tr');
+    const tl  = val('inTl',   'tl');
+    const loc = val('inLoc',  'loc');
 
-// ---- Kopfzeilen (robust, nur Inputs lesen) ----
-const f = (id) => (document.getElementById(id)?.value ?? '').trim();
+    const lines = [];
+    lines.push(`Datum/Uhrzeit: ${dt || '-'}`);
+    lines.push(`Fahrer/in: ${op || '-'}`);
+    lines.push(`Zugmaschine: ${tr || '-'} | Auflieger/Modul: ${tl || '-'}`);
+    if (loc) lines.push(`Ort: ${loc}`);
+    if (state.geo) lines.push(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
 
-const dt = f('inDate');
-const op = f('inOp');
-const tr = f('inTr');
-const tl = f('inTl');
-const loc = f('inLoc');
-
-const lines = [];
-lines.push(`Datum/Uhrzeit: ${dt || '-'}`);
-lines.push(`Fahrer/in: ${op || '-'}`);
-lines.push(`Zugmaschine: ${tr || '-'} | Auflieger/Modul: ${tl || '-'}`);
-if (loc) lines.push(`Ort: ${loc}`);
-if (state.geo) lines.push(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
-
-// stabiler Betreff
-const subject = `Fahrzeugkontrolle ${tr || 'Zug'} / ${tl || 'Aufl'}`;
-
-
-    // Checkliste kompakt
+    // ---- Checkliste kompakt
     const checkRows = items.map(it => {
       const r = state.res[it.id] || {};
       const sev = r.sev || '-';
@@ -337,7 +333,9 @@ const subject = `Fahrzeugkontrolle ${tr || 'Zug'} / ${tl || 'Aufl'}`;
       return `• [${sev}] ${it.title}${note}`;
     }).join('\n');
 
-    // Text + HTML
+    // ---- Text & HTML
+    const subject = `Fahrzeugkontrolle ${tr || 'Zug'} / ${tl || 'Aufl'}`;
+
     const bodyText = `Fahrzeugkontrolle – Schwerlast/Zugmaschine
 ${lines.join('\n')}
 
@@ -366,12 +364,11 @@ ${checkRows}
          <div style="margin-top:10px">(Details siehe PDF-Anhang)</div>
        </div>`;
 
-    // Payload
+    // ---- Payload & Versand
     const payload = {
-      to: $('#inDispo').value.trim(),
-      cc: $('#inCc').value.trim() || '',
-     subject,
-
+      to: $id('inDispo').value.trim(),
+      cc: ($id('inCc')?.value || '').trim(),
+      subject,
       text: bodyText,
       html: bodyHtml,
       filename,
@@ -380,7 +377,6 @@ ${checkRows}
 
     setStatus('Sende über Relay …');
 
-    // Versand (erst normal, dann ruhiger Fallback)
     try {
       await fetch(RELAY_URL, {
         method: 'POST',
@@ -404,6 +400,7 @@ ${checkRows}
     alert('Fehler beim Versand: ' + (err?.message || err));
   }
 }
+
 })();
 </script>
 </body>
