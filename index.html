@@ -309,22 +309,25 @@ const val = (id, lsKey = null) => {
   return '';
 };
 
-   // Kopfzeilen (robust)
-const dt = val('inDate', 'date');
-const op = val('inOp',   'op');
-const tr = val('inTr',   'tr');
-const tl = val('inTl',   'tl');
-const loc = val('inLoc', 'loc');
+// ---- Kopfzeilen (robust, nur Inputs lesen) ----
+const f = (id) => (document.getElementById(id)?.value ?? '').trim();
+
+const dt = f('inDate');
+const op = f('inOp');
+const tr = f('inTr');
+const tl = f('inTl');
+const loc = f('inLoc');
 
 const lines = [];
-lines.push(`Datum/Uhrzeit: ${dt}`);
-lines.push(`Fahrer/in: ${op}`);
-lines.push(`Zugmaschine: ${tr} | Auflieger/Modul: ${tl}`);
+lines.push(`Datum/Uhrzeit: ${dt || '-'}`);
+lines.push(`Fahrer/in: ${op || '-'}`);
+lines.push(`Zugmaschine: ${tr || '-'} | Auflieger/Modul: ${tl || '-'}`);
 if (loc) lines.push(`Ort: ${loc}`);
 if (state.geo) lines.push(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
 
-// Betreff ab jetzt stabil
+// stabiler Betreff
 const subject = `Fahrzeugkontrolle ${tr || 'Zug'} / ${tl || 'Aufl'}`;
+
 
     // Checkliste kompakt
     const checkRows = items.map(it => {
