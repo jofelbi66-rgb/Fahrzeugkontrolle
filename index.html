@@ -296,25 +296,32 @@ async function onMail() {
     const tl  = f('inTl');
     const loc = f('inLoc');
 
-    // --- 3) Kopfzeilen & Betreff
-    const lines = [];
-    lines.push(`Datum/Uhrzeit: ${dt || '-'}`);
-    lines.push(`Fahrer/in: ${op || '-'}`);
-    lines.push(`Zugmaschine: ${tr || '-'} | Auflieger/Modul: ${tl || '-'}`);
-    if (loc) lines.push(`Ort: ${loc}`);
-    if (state.geo) lines.push(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
-    const subject = `Fahrzeugkontrolle ${tr || 'Zug'} / ${tl || 'Aufl'}`;
+   // --- 3) Kopfzeilen & Betreff  (Werte zuerst lesen!)
+const f   = (id) => (document.getElementById(id)?.value ?? '').trim();
+const dt  = f('inDate');
+const op  = f('inOp');
+const tr  = f('inTr');
+const tl  = f('inTl');
+const loc = f('inLoc');
 
-    // --- 4) Checkliste zusammenfassen
-    const checkRows = items.map(it => {
-      const r = state.res[it.id] || {};
-      const sev = r.sev || '-';
-      const note = (r.note && r.note.trim()) ? ` – ${r.note.trim()}` : '';
-      return `• [${sev}] ${it.title}${note}`;
-    }).join('\n');
+const lines = [];
+lines.push(`Datum/Uhrzeit: ${dt || '-'}`);
+lines.push(`Fahrer/in: ${op || '-'}`);
+lines.push(`Zugmaschine: ${tr || '-'} | Auflieger/Modul: ${tl || '-'}`);
+if (loc) lines.push(`Ort: ${loc}`);
+if (state.geo) lines.push(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
+const subject = `Fahrzeugkontrolle ${tr || 'Zug'} / ${tl || 'Aufl'}`;
 
-    // --- 5) Mail-Text & HTML bauen (bevor PDF gebaut wird!)
-    const bodyText = `Fahrzeugkontrolle – Schwerlast/Zugmaschine
+// --- 4) Checkliste zusammenfassen
+const checkRows = items.map(it => {
+  const r = state.res[it.id] || {};
+  const sev = r.sev || '-';
+  const note = (r.note && r.note.trim()) ? ` – ${r.note.trim()}` : '';
+  return `• [${sev}] ${it.title}${note}`;
+}).join('\n');
+
+// --- 5) Mail-Text & HTML bauen (vollständig!)
+const bodyText = `Fahrzeugkontrolle – Schwerlast/Zugmaschine
 ${lines.join('\n')}
 
 Freigabe: ${freigabeText}
@@ -324,23 +331,24 @@ ${checkRows}
 
 (Details siehe PDF-Anhang)`;
 
-    const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
-    const bodyHtml =
-      `<div style="font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;font-size:14px;line-height:1.5">
-         <h2 style="margin:0 0 8px 0">Fahrzeugkontrolle – Schwerlast/Zugmaschine</h2>
-         <div>${lines.map(s => `<div>${esc(s)}</div>`).join('')}</div>
-         <div style="margin:10px 0 0 0"><strong>Freigabe: ${esc(freigabeText)}</strong></div>
-         <div style="margin:10px 0 4px 0"><strong>Checkpunkte:</strong></div>
-         <ul style="margin:0;padding-left:18px">
-           ${items.map(it => {
-             const r = state.res[it.id] || {};
-             const sev = r.sev || '-';
-             const note = (r.note && r.note.trim()) ? ' – ' + esc(r.note.trim()) : '';
-             return `<li>[${esc(sev)}] ${esc(it.title)}${note}</li>`;
-           }).join('')}
-         </ul>
-         <div style="margin-top:10px">(Details siehe PDF-Anhang)</div>
-       </div>`;
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const bodyHtml =
+  `<div style="font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;font-size:14px;line-height:1.5">
+     <h2 style="margin:0 0 8px 0">Fahrzeugkontrolle – Schwerlast/Zugmaschine</h2>
+     <div>${lines.map(s => `<div>${esc(s)}</div>`).join('')}</div>
+     <div style="margin:10px 0 0 0"><strong>Freigabe: ${esc(freigabeText)}</strong></div>
+     <div style="margin:10px 0 4px 0"><strong>Checkpunkte:</strong></div>
+     <ul style="margin:0;padding-left:18px">
+       ${items.map(it => {
+         const r = state.res[it.id] || {};
+         const sev = r.sev || '-';
+         const note = (r.note && r.note.trim()) ? ' – ' + esc(r.note.trim()) : '';
+         return `<li>[${esc(sev)}] ${esc(it.title)}${note}</li>`;
+       }).join('')}
+     </ul>
+     <div style="margin-top:10px">(Details siehe PDF-Anhang)</div>
+   </div>`;
+
 
     // --- 6) JETZT das PDF erzeugen
     setStatus('Erzeuge PDF …');
