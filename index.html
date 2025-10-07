@@ -1,4 +1,3 @@
-<link rel="icon" type="image/png" sizes="512x512" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <meta name="theme-color" content="#0076BC">
 <meta name="apple-mobile-web-app-title" content="Check dein Fahrzeug">
@@ -269,10 +268,13 @@
 
   const blobToBase64 = blob => new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(blob); });
 
-  async function onMail() {
+async function onMail() {
   const problems = [];
-  if (!$('#inDispo').value) problems.push('Dispo-E-Mail fehlt');
-  if (!$('#inOp').value || !$('#inTr').value || !$('#inTl').value)
+  const $id = (x) => document.getElementById(x);
+
+  // ---- Pflichtprüfungen
+  if (!$id('inDispo')?.value) problems.push('Dispo-E-Mail fehlt');
+  if (!$id('inOp')?.value || !$id('inTr')?.value || !$id('inTl')?.value)
     problems.push('Fahrer/in und beide Kennzeichen sind Pflicht');
 
   const notRated = items
@@ -285,51 +287,44 @@
     return;
   }
 
+  // ---- Helfer: Werte robust lesen (Input → Text → LocalStorage)
+  const fromLS = (k) => (localStorage.getItem(k) || '').trim();
+  const val = (id, lsKey=null) => {
+    const el = $id(id);
+    const v = el ? (('value' in el ? el.value : el.textContent) || '').trim() : '';
+    if (v) return v;
+    if (lsKey) {
+      const w = fromLS(lsKey);
+      if (w) return w;
+    }
+    return '';
+  };
+
   try {
     setStatus('Erzeuge PDF …');
     const pdfBlob  = buildPdf();
     const base64   = await blobToBase64(pdfBlob);
-    const filename = `Fahrzeugkontrolle_${($('#inTr').value||'Zug')}_${($('#inTl').value||'Aufl')}.pdf`;
+    const filename = `Fahrzeugkontrolle_${(val('inTr','tr')||'Zug')}_${(val('inTl','tl')||'Aufl')}.pdf`;
 
-    // --- Freigabe zuerst berechnen (nur EINMAL und VOR jeder Nutzung!) ---
+    // ---- Freigabe zuerst berechnen
     const anyBad = items.some(it => (state.res[it.id] && state.res[it.id].sev === 'Mangel'));
     const freigabeText = anyBad ? 'NICHT ERTEILT (Mangel vorhanden)' : 'ERTEILT';
-// Robuste Werteleser (Input/Text/LocalStorage)
-const getEl = (id) => document.querySelector(id.startsWith('#') ? id : '#'+id);
-const fromLS = (k) => (localStorage.getItem(k) || '').trim();
 
-const val = (id, lsKey = null) => {
-  const el = getEl(id);
-  const v = el ? (('value' in el ? el.value : el.textContent) || '').trim() : '';
-  if (v) return v;
-  if (lsKey) {
-    const w = fromLS(lsKey);
-    if (w) return w;
-  }
-  return '';
-};
+    // ---- Kopfzeilen (robust lesen)
+    const dt  = val('inDate', 'date');
+    const op  = val('inOp',   'op');
+    const tr  = val('inTr',   'tr');
+    const tl  = val('inTl',   'tl');
+    const loc = val('inLoc',  'loc');
 
-// ---- Kopfzeilen (robust, nur Inputs lesen) ----
-const f = (id) => (document.getElementById(id)?.value ?? '').trim();
+    const lines = [];
+    lines.push(`Datum/Uhrzeit: ${dt || '-'}`);
+    lines.push(`Fahrer/in: ${op || '-'}`);
+    lines.push(`Zugmaschine: ${tr || '-'} | Auflieger/Modul: ${tl || '-'}`);
+    if (loc) lines.push(`Ort: ${loc}`);
+    if (state.geo) lines.push(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
 
-const dt = f('inDate');
-const op = f('inOp');
-const tr = f('inTr');
-const tl = f('inTl');
-const loc = f('inLoc');
-
-const lines = [];
-lines.push(`Datum/Uhrzeit: ${dt || '-'}`);
-lines.push(`Fahrer/in: ${op || '-'}`);
-lines.push(`Zugmaschine: ${tr || '-'} | Auflieger/Modul: ${tl || '-'}`);
-if (loc) lines.push(`Ort: ${loc}`);
-if (state.geo) lines.push(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
-
-// stabiler Betreff
-const subject = `Fahrzeugkontrolle ${tr || 'Zug'} / ${tl || 'Aufl'}`;
-
-
-    // Checkliste kompakt
+    // ---- Checkliste kompakt
     const checkRows = items.map(it => {
       const r = state.res[it.id] || {};
       const sev = r.sev || '-';
@@ -337,7 +332,9 @@ const subject = `Fahrzeugkontrolle ${tr || 'Zug'} / ${tl || 'Aufl'}`;
       return `• [${sev}] ${it.title}${note}`;
     }).join('\n');
 
-    // Text + HTML
+    // ---- Text & HTML
+    const subject = `Fahrzeugkontrolle ${tr || 'Zug'} / ${tl || 'Aufl'}`;
+
     const bodyText = `Fahrzeugkontrolle – Schwerlast/Zugmaschine
 ${lines.join('\n')}
 
@@ -366,12 +363,11 @@ ${checkRows}
          <div style="margin-top:10px">(Details siehe PDF-Anhang)</div>
        </div>`;
 
-    // Payload
+    // ---- Payload & Versand
     const payload = {
-      to: $('#inDispo').value.trim(),
-      cc: $('#inCc').value.trim() || '',
-     subject,
-
+      to: $id('inDispo').value.trim(),
+      cc: ($id('inCc')?.value || '').trim(),
+      subject,
       text: bodyText,
       html: bodyHtml,
       filename,
@@ -380,7 +376,6 @@ ${checkRows}
 
     setStatus('Sende über Relay …');
 
-    // Versand (erst normal, dann ruhiger Fallback)
     try {
       await fetch(RELAY_URL, {
         method: 'POST',
@@ -404,181 +399,8 @@ ${checkRows}
     alert('Fehler beim Versand: ' + (err?.message || err));
   }
 }
-})();
-<script>
-/* --- Mail-Patch: ersetzt NUR onMail, Rest der App bleibt unberührt --- */
-(function () {
-  // Hilfsfunktionen lokal, damit nichts anderes beeinflusst wird
-  const $id = (x) => document.getElementById(x);
-  const blobToBase64 = (blob) => new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(String(r.result).split(',')[1]);
-    r.onerror = rej;
-    r.readAsDataURL(blob);
-  });
 
-  // Diese Funktion überschreibt die alte onMail()
-  window.onMail = async function () {
-    const problems = [];
-    try {
-      // Pflichtfelder prüfen
-      if (!$id('inDispo')?.value) problems.push('Dispo-E-Mail fehlt');
-      if (!$id('inOp')?.value || !$id('inTr')?.value || !$id('inTl')?.value) {
-        problems.push('Fahrer/in und beide Kennzeichen sind Pflicht');
-      }
-      // Nicht bewertete Punkte
-      const notRated = (window.items || []).filter(it => !(window.state?.res?.[it.id]?.sev))
-                         .map(it => it.title);
-      if (notRated.length) problems.push('Nicht bewertet: ' + notRated.join(', '));
-      if (problems.length) { alert('Versand blockiert:\n- ' + problems.join('\n- ')); return; }
-
-      // Freigabe
-      const anyBad = (window.items || []).some(it => (window.state?.res?.[it.id]?.sev === 'Mangel'));
-      const freigabeText = anyBad ? 'NICHT ERTEILT (Mangel vorhanden)' : 'ERTEILT';
-
-      // Werte JETZT lesen (vor PDF)
-      const f   = (id) => ($id(id)?.value ?? '').trim();
-      const dt  = f('inDate');
-      const op  = f('inOp');
-      const tr  = f('inTr');
-      const tl  = f('inTl');
-      const loc = f('inLoc');
-
-      // Kopfzeilen
-      const lines = [];
-      lines.push(`Datum/Uhrzeit: ${dt || '-'}`);
-      lines.push(`Fahrer/in: ${op || '-'}`);
-      lines.push(`Zugmaschine: ${tr || '-'} | Auflieger/Modul: ${tl || '-'}`);
-      if (loc) lines.push(`Ort: ${loc}`);
-      if (window.state?.geo) {
-        const g = window.state.geo;
-        lines.push(`Geotag: ${g.lat}, ${g.lon} (±${g.acc} m)`);
-      }
-      const subject = `Fahrzeugkontrolle ${tr || 'Zug'} / ${tl || 'Aufl'}`;
-
-      // Checkliste kompakt
-      const checkRows = (window.items || []).map(it => {
-        const r = window.state?.res?.[it.id] || {};
-        const sev = r.sev || '-';
-        const note = (r.note && r.note.trim()) ? ` – ${r.note.trim()}` : '';
-        return `• [${sev}] ${it.title}${note}`;
-      }).join('\n');
-
-      // Mail-Text + HTML
-      const bodyText = `Fahrzeugkontrolle – Schwerlast/Zugmaschine
-${lines.join('\n')}
-
-Freigabe: ${freigabeText}
-
-Checkpunkte:
-${checkRows}
-
-(Details siehe PDF-Anhang)`;
-
-      const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
-      const bodyHtml =
-        `<div style="font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;font-size:14px;line-height:1.5">
-           <h2 style="margin:0 0 8px 0">Fahrzeugkontrolle – Schwerlast/Zugmaschine</h2>
-           <div>${lines.map(s => `<div>${esc(s)}</div>`).join('')}</div>
-           <div style="margin:10px 0 0 0"><strong>Freigabe: ${esc(freigabeText)}</strong></div>
-           <div style="margin:10px 0 4px 0"><strong>Checkpunkte:</strong></div>
-           <ul style="margin:0;padding-left:18px">
-             ${(window.items || []).map(it => {
-                const r = window.state?.res?.[it.id] || {};
-                const sev = r.sev || '-';
-                const note = (r.note && r.note.trim()) ? ' – ' + esc(r.note.trim()) : '';
-                return `<li>[${esc(sev)}] ${esc(it.title)}${note}</li>`;
-             }).join('')}
-           </ul>
-           <div style="margin-top:10px">(Details siehe PDF-Anhang)</div>
-         </div>`;
-
-      // PDF erzeugen (nutzt deine vorhandene buildPdf)
-      window.setStatus?.('Erzeuge PDF …');
-      const pdfBlob  = window.buildPdf();
-      const base64   = await blobToBase64(pdfBlob);
-      const filename = `Fahrzeugkontrolle_${tr || 'Zug'}_${tl || 'Aufl'}.pdf`;
-
-      // Payload
-      const payload = {
-        to: $id('inDispo').value.trim(),
-        cc: ($id('inCc')?.value || '').trim(),
-        subject,
-        text: bodyText,
-        html: bodyHtml,
-        filename,
-        pdfBase64: base64
-      };
-
-      // Versand: gleiche Art wie vorher (dein Apps Script akzeptiert das)
-      window.setStatus?.('Sende über Relay …');
-      await fetch(window.RELAY_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(payload)
-      }).catch(async () => {
-        await fetch(window.RELAY_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify(payload)
-        });
-      });
-
-      window.setStatus?.('Bericht gesendet ✓');
-      alert('E-Mail mit PDF-Anhang wurde gesendet.');
-    } catch (err) {
-      window.setStatus?.('Senden fehlgeschlagen');
-      alert('Fehler beim Versand: ' + (err?.message || err));
-    }
-  };
 })();
 </script>
-
 </body>
-</html><link rel="icon" type="image/png" sizes="512x512" href="icon.png">
-<link rel="apple-touch-icon" href="icon.png">
-<meta name="theme-color" content="#0076BC">
-<meta name="apple-mobile-web-app-title" content="Check dein Fahrzeug">
-<!doctype html>
-<html lang="de">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Fahrzeugkontrolle – Schwerlast (GitHub Pages)</title>
-<meta name="color-scheme" content="light">
-<!-- Eingebettetes App-Icon (Data-URL) -->
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' rx='24' ry='24' fill='%230076BC'/%3E%3Crect x='20' y='20' width='88' height='88' rx='18' ry='18' fill='none' stroke='white' stroke-width='6'/%3E%3Cpath d='M36 66 L58 86 L94 42' fill='none' stroke='white' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
-<style>
-  :root{--b:#e2e8f0;--mut:#64748b;--ok:#059669;--warn:#d97706;--bad:#dc2626}
-  *{box-sizing:border-box}
-  body{margin:0;font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f8fafc;color:#0f172a}
-  header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--b);z-index:5}
-  .wrap{max-width:980px;margin:0 auto;padding:14px}
-  h1{margin:0;font-size:20px} h2{margin:0 0 10px;font-size:18px}
-  section{background:#fff;border:1px solid var(--b);border-radius:12px;padding:14px;margin:12px 0}
-  .grid{display:grid;gap:10px}
-  @media(min-width:720px){.grid-2{grid-template-columns:1fr 1fr}}
-  label span{font-size:14px;font-weight:600}
-  input,textarea{width:100%;padding:12px;border:1px solid var(--b);border-radius:10px;font:inherit}
-  textarea{min-height:56px;resize:vertical}
-  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  .btn{padding:10px 14px;border:1px solid var(--b);background:#fff;border-radius:10px;cursor:pointer;font-weight:600}
-  .btn:hover{background:#f1f5f9}
-  .btn.ok.active{background:var(--ok);color:#fff}
-  .btn.warn.active{background:var(--warn);color:#fff}
-  .btn.bad.active{background:var(--bad);color:#fff}
-  .chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid var(--b);background:#eef2ff}
-  .card{border:1px solid var(--b);border-radius:10px;padding:10px}
-  .status{font-size:14px;color:#64748b}
-  .photos{display:flex;gap:8px;overflow:auto}
-  .ph{position:relative;width:92px;height:92px;border:1px solid var(--b);border-radius:8px;overflow:hidden;background:#f8fafc}
-  .ph img{width:100%;height:100%;object-fit:cover}
-  .x{position:absolute;right:4px;top:4px;width:22px;height:22px;border-radius:11px;border:1px solid var(--b);background:#fff;cursor:pointer;line-height:20px;text-align:center;font-size:14px}
-  footer{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--b)}
-  .help{font-size:12px;color:#475569}
-</style>
-</head>
-<body>
-<header>
-  
+</html>
