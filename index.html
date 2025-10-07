@@ -405,7 +405,136 @@ ${checkRows}
   }
 }
 })();
+<script>
+/* --- Mail-Patch: ersetzt NUR onMail, Rest der App bleibt unberührt --- */
+(function () {
+  // Hilfsfunktionen lokal, damit nichts anderes beeinflusst wird
+  const $id = (x) => document.getElementById(x);
+  const blobToBase64 = (blob) => new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(String(r.result).split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(blob);
+  });
+
+  // Diese Funktion überschreibt die alte onMail()
+  window.onMail = async function () {
+    const problems = [];
+    try {
+      // Pflichtfelder prüfen
+      if (!$id('inDispo')?.value) problems.push('Dispo-E-Mail fehlt');
+      if (!$id('inOp')?.value || !$id('inTr')?.value || !$id('inTl')?.value) {
+        problems.push('Fahrer/in und beide Kennzeichen sind Pflicht');
+      }
+      // Nicht bewertete Punkte
+      const notRated = (window.items || []).filter(it => !(window.state?.res?.[it.id]?.sev))
+                         .map(it => it.title);
+      if (notRated.length) problems.push('Nicht bewertet: ' + notRated.join(', '));
+      if (problems.length) { alert('Versand blockiert:\n- ' + problems.join('\n- ')); return; }
+
+      // Freigabe
+      const anyBad = (window.items || []).some(it => (window.state?.res?.[it.id]?.sev === 'Mangel'));
+      const freigabeText = anyBad ? 'NICHT ERTEILT (Mangel vorhanden)' : 'ERTEILT';
+
+      // Werte JETZT lesen (vor PDF)
+      const f   = (id) => ($id(id)?.value ?? '').trim();
+      const dt  = f('inDate');
+      const op  = f('inOp');
+      const tr  = f('inTr');
+      const tl  = f('inTl');
+      const loc = f('inLoc');
+
+      // Kopfzeilen
+      const lines = [];
+      lines.push(`Datum/Uhrzeit: ${dt || '-'}`);
+      lines.push(`Fahrer/in: ${op || '-'}`);
+      lines.push(`Zugmaschine: ${tr || '-'} | Auflieger/Modul: ${tl || '-'}`);
+      if (loc) lines.push(`Ort: ${loc}`);
+      if (window.state?.geo) {
+        const g = window.state.geo;
+        lines.push(`Geotag: ${g.lat}, ${g.lon} (±${g.acc} m)`);
+      }
+      const subject = `Fahrzeugkontrolle ${tr || 'Zug'} / ${tl || 'Aufl'}`;
+
+      // Checkliste kompakt
+      const checkRows = (window.items || []).map(it => {
+        const r = window.state?.res?.[it.id] || {};
+        const sev = r.sev || '-';
+        const note = (r.note && r.note.trim()) ? ` – ${r.note.trim()}` : '';
+        return `• [${sev}] ${it.title}${note}`;
+      }).join('\n');
+
+      // Mail-Text + HTML
+      const bodyText = `Fahrzeugkontrolle – Schwerlast/Zugmaschine
+${lines.join('\n')}
+
+Freigabe: ${freigabeText}
+
+Checkpunkte:
+${checkRows}
+
+(Details siehe PDF-Anhang)`;
+
+      const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+      const bodyHtml =
+        `<div style="font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;font-size:14px;line-height:1.5">
+           <h2 style="margin:0 0 8px 0">Fahrzeugkontrolle – Schwerlast/Zugmaschine</h2>
+           <div>${lines.map(s => `<div>${esc(s)}</div>`).join('')}</div>
+           <div style="margin:10px 0 0 0"><strong>Freigabe: ${esc(freigabeText)}</strong></div>
+           <div style="margin:10px 0 4px 0"><strong>Checkpunkte:</strong></div>
+           <ul style="margin:0;padding-left:18px">
+             ${(window.items || []).map(it => {
+                const r = window.state?.res?.[it.id] || {};
+                const sev = r.sev || '-';
+                const note = (r.note && r.note.trim()) ? ' – ' + esc(r.note.trim()) : '';
+                return `<li>[${esc(sev)}] ${esc(it.title)}${note}</li>`;
+             }).join('')}
+           </ul>
+           <div style="margin-top:10px">(Details siehe PDF-Anhang)</div>
+         </div>`;
+
+      // PDF erzeugen (nutzt deine vorhandene buildPdf)
+      window.setStatus?.('Erzeuge PDF …');
+      const pdfBlob  = window.buildPdf();
+      const base64   = await blobToBase64(pdfBlob);
+      const filename = `Fahrzeugkontrolle_${tr || 'Zug'}_${tl || 'Aufl'}.pdf`;
+
+      // Payload
+      const payload = {
+        to: $id('inDispo').value.trim(),
+        cc: ($id('inCc')?.value || '').trim(),
+        subject,
+        text: bodyText,
+        html: bodyHtml,
+        filename,
+        pdfBase64: base64
+      };
+
+      // Versand: gleiche Art wie vorher (dein Apps Script akzeptiert das)
+      window.setStatus?.('Sende über Relay …');
+      await fetch(window.RELAY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(payload)
+      }).catch(async () => {
+        await fetch(window.RELAY_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(payload)
+        });
+      });
+
+      window.setStatus?.('Bericht gesendet ✓');
+      alert('E-Mail mit PDF-Anhang wurde gesendet.');
+    } catch (err) {
+      window.setStatus?.('Senden fehlgeschlagen');
+      alert('Fehler beim Versand: ' + (err?.message || err));
+    }
+  };
+})();
 </script>
+
 </body>
 </html><link rel="icon" type="image/png" sizes="512x512" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
