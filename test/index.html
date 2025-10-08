@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Fahrzeugkontrolle – Testmail (reduziert)</title>
+  <style>
+    :root { --blue:#0a84c1; --bg:#f6f8fa; }
+    body { font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif; background: var(--bg); margin:0; }
+    .wrap { max-width: 860px; margin: 24px auto; background:#fff; padding: 20px; border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,.08); }
+    h1 { margin: 0 0 8px 0; font-size: 22px; }
+    p.hint { margin: 6px 0 18px 0; color:#555; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid .full { grid-column: 1 / -1; }
+    label { font-weight: 600; font-size: 13px; margin-bottom: 6px; display:block; }
+    input[type="text"], input[type="email"], input[type="datetime-local"] {
+      width: 100%; padding: 10px 12px; border:1px solid #cfd8e3; border-radius:10px; font-size:14px; outline:none;
+    }
+    input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(10,132,193,.15); }
+    .row { margin-top: 6px; }
+    .actions { margin-top: 14px; display:flex; gap:10px; flex-wrap: wrap; }
+    button {
+      appearance: none; border:0; cursor:pointer; border-radius:12px; padding:11px 16px; font-weight:600;
+      background: var(--blue); color:#fff;
+    }
+    button.secondary { background:#fff; color:#0a84c1; border:1px solid #b8d7ea; }
+    #status { margin-top:10px; color:#333; font-size:13px; }
+    small.muted { color:#666; }
+  </style>
+  <!-- jsPDF (einzige externe Abhängigkeit) -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Fahrzeugkontrolle – Testmail (reduziert)</h1>
+    <p class="hint">
+      Getrennte Testseite. Versand geht an <b>j.jansen@felbermayr.cc</b> (PDF inklusive).<br />
+      Diese Seite ändert <u>nicht</u> deine Live-App.
+    </p>
+
+    <div class="grid">
+      <div class="row">
+        <label for="inDate">Datum/Uhrzeit</label>
+        <input id="inDate" type="datetime-local" />
+      </div>
+      <div class="row">
+        <label for="inOp">Fahrer/in</label>
+        <input id="inOp" type="text" placeholder="Vor- und Nachname" />
+      </div>
+
+      <div class="row">
+        <label for="inTr">Zugmaschine</label>
+        <input id="inTr" type="text" placeholder="Kennzeichen Zug" />
+      </div>
+      <div class="row">
+        <label for="inTl">Auflieger / Modul</label>
+        <input id="inTl" type="text" placeholder="Kennzeichen Auflieger/Modul" />
+      </div>
+
+      <div class="row full">
+        <label for="inLoc">Ort (optional)</label>
+        <input id="inLoc" type="text" placeholder="z. B. Köln-Niehl" />
+      </div>
+
+      <div class="row full">
+        <label for="inCc">CC (optional)</label>
+        <input id="inCc" type="email" placeholder="weitere Empfänger, optional" />
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="secondary" id="btn-now">Jetzt-Datum einsetzen</button>
+      <button type="button" id="btn-send">Testmail senden (mit PDF)</button>
+    </div>
+
+    <div id="status"><small class="muted">Bereit.</small></div>
+  </div>
+
+  <script>
+  /* =========================
+     Fixe Einstellungen
+  ==========================*/
+  const RELAY_URL = "https://script.google.com/macros/s/AKFycbzwp8iP9FUlFnddcz_ORZTXfqkeTnhz_k3kJxMU2AGZzXGSLylEe_g4uczH6FT-SxzPUg/exec";
+  const MAIL_TO   = "j.jansen@felbermayr.cc";
+
+  /* =========================
+     Utilities
+  ==========================*/
+  const $ = sel => document.querySelector(sel);
+  const setStatus = (t) => { $('#status').textContent = t; };
+
+  // Datum/Uhrzeit ins Input-Format (lokale Zeit) bringen
+  function nowForInput() {
+    const d = new Date();
+    const off = d.getTimezoneOffset();
+    const local = new Date(d.getTime() - off * 60000);
+    return local.toISOString().slice(0,16); // "YYYY-MM-DDTHH:MM"
+  }
+
+  async function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result).split(",")[1]);
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+  }
+
+  /* =========================
+     PDF bauen (reduziert)
+  ==========================*/
+  function buildPdf(values) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+
+    let y = 20;
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(16);
+    doc.text("Fahrzeugkontrolle – Testbericht (reduziert)", 105, y, { align: "center" });
+
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(12);
+    y += 12;
+    doc.text(`Datum/Uhrzeit: ${values.date || "-"}`, 20, y);
+    y += 8; doc.text(`Fahrer/in: ${values.op || "-"}`, 20, y);
+    y += 8; doc.text(`Zugmaschine: ${values.tr || "-"}`, 20, y);
+    y += 8; doc.text(`Auflieger/Modul: ${values.tl || "-"}`, 20, y);
+    y += 8; doc.text(`Ort: ${values.loc || "-"}`, 20, y);
+
+    y += 12;
+    doc.setFont("helvetica","bold");
+    doc.text("Hinweis", 20, y);
+    doc.setFont("helvetica","normal");
+    y += 8;
+    doc.text("Dies ist eine getrennte TESTSEITE lediglich zur Prüfung des E-Mail-Versands.", 20, y);
+
+    return doc.output("blob");
+  }
+
+  /* =========================
+     Versand (Google Relay)
+  ==========================*/
+  async function onMail() {
+    try {
+      // Pflicht-Prüfung
+      const date = $('#inDate').value.trim();
+      const op   = $('#inOp').value.trim();
+      const tr   = $('#inTr').value.trim();
+      const tl   = $('#inTl').value.trim();
+
+      const problems = [];
+      if (!date) problems.push("Datum/Uhrzeit fehlt");
+      if (!op)   problems.push("Fahrer/in fehlt");
+      if (!tr)   problems.push("Zugmaschine fehlt");
+      if (!tl)   problems.push("Auflieger/Modul fehlt");
+      if (problems.length) { alert("Versand blockiert:\n- " + problems.join("\n- ")); return; }
+
+      const loc  = $('#inLoc').value.trim();
+      const cc   = $('#inCc').value.trim();
+
+      const values = { date, op, tr, tl, loc };
+
+      // 1) PDF bauen
+      setStatus("Erzeuge PDF …");
+      const pdfBlob  = buildPdf(values);
+      const base64   = await blobToBase64(pdfBlob);
+      const filename = `Fahrzeugkontrolle_${tr || 'Zug'}_${tl || 'Aufl'}.pdf`;
+
+      // 2) Mailinhalt minimal
+      const subject  = `Fahrzeugkontrolle (TEST) – ${op} – ${date}`;
+      const bodyText = `Fahrzeugkontrolle (TEST)\nDatum/Uhrzeit: ${date}\nFahrer/in: ${op}\nZugmaschine: ${tr}\nAuflieger/Modul: ${tl}\nOrt: ${loc || "-"}`;
+      const bodyHtml =
+        `<div style="font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;font-size:14px;line-height:1.5">
+           <h2 style="margin:0 0 6px 0">Fahrzeugkontrolle (TEST)</h2>
+           <div>Datum/Uhrzeit: <b>${date}</b></div>
+           <div>Fahrer/in: <b>${op}</b></div>
+           <div>Zugmaschine: <b>${tr}</b></div>
+           <div>Auflieger/Modul: <b>${tl}</b></div>
+           <div>Ort: <b>${loc || '-'}</b></div>
+           <div style="margin-top:8px">Details siehe PDF-Anhang.</div>
+         </div>`;
+
+      const payload = {
+        to: MAIL_TO,
+        cc,
+        subject,
+        text: bodyText,
+        html: bodyHtml,
+        filename,
+        pdfBase64: base64
+      };
+
+      // 3) Versand: zuerst text/plain (bewährt), Fallback no-cors
+      setStatus("Sende über Relay …");
+      try {
+        await fetch(RELAY_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify(payload)
+        });
+      } catch(e) {
+        await fetch(RELAY_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify(payload)
+        });
+      }
+
+      setStatus("Bericht gesendet ✓");
+      alert("E-Mail mit PDF-Anhang wurde gesendet (TEST).");
+    } catch (err) {
+      setStatus("Senden fehlgeschlagen");
+      alert("Fehler beim Versand (TEST): " + (err?.message || err));
+    }
+  }
+
+  /* =========================
+     Init
+  ==========================*/
+  window.addEventListener('load', () => {
+    // Heute einsetzen, wenn leer
+    if (!$('#inDate').value) $('#inDate').value = nowForInput();
+    $('#btn-now').addEventListener('click', () => $('#inDate').value = nowForInput());
+    $('#btn-send').addEventListener('click', onMail);
+  });
+  </script>
+</body>
+</html>
