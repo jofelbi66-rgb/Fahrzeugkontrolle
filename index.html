@@ -238,24 +238,91 @@
     $('#btnSaveSig').onclick=()=>{ state.sig=c.toDataURL('image/jpeg',0.8); $('#sigStatus').style.display='inline'; persist(); };
   }
 
-  function buildPdf(){
-    const doc=new jsPDF({unit:'pt',format:'a4'}); const m=40; let y=m; const lh=16;
-    const line=(t='',bold=false)=>{ doc.setFont('helvetica',bold?'bold':'normal'); doc.text(safeText(t), m, y); y+=lh; if(y>800){doc.addPage(); y=m;} };
-    if(state.logo){ try{ const pageW=doc.internal.pageSize.getWidth(); const w=80, h=Math.round(w/(state.logoAspect||1)); const x=pageW-m-w; doc.addImage(state.logo,'JPEG',x,m-10,w,h); }catch(e){} }
-    doc.setFontSize(14); line('Fahrzeugkontrolle – Schwerlast/Zugmaschine',true); doc.setFontSize(10);
-    line('Datum/Uhrzeit: '+($('#inDate').value||'')); line('Fahrer/in: '+($('#inOp').value||'')); line('Zugmaschine: '+($('#inTr').value||'')); line('Auflieger/Modul: '+($('#inTl').value||'')); if($('#inLoc').value) line('Ort: '+($('#inLoc').value));
-    if(state.geo) line('Geotag: '+(state.geo.lat+', '+state.geo.lon+' (±'+state.geo.acc+' m)')); line();
-    const anyBad=Object.values(state.res).some(r=>r.sev==='Mangel'); line('Freigabe: '+(anyBad?'NICHT ERTEILT (Mangel vorhanden)':'ERTEILT')); line();
-    line('Checkpunkte:',true); items.forEach(it=>{const r=state.res[it.id]||{}; line('- ['+(r.sev||'?')+'] '+it.title); if(r.note) line('   Notiz: '+r.note);});
-    line(); line('Digitale Unterschrift:',true);
-    if(state.sig){ try{ doc.addImage(state.sig,'JPEG',m,y,180,50); y+=60; }catch(e){ line('(keine Signatur einbettbar)'); } } else line('(keine Signatur)');
-    items.forEach(it=>{
-      const r=state.res[it.id]; if(!r||!r.photos||!r.photos.length)return;
-      doc.addPage(); y=m; line('Fotos – '+it.title,true); y+=6;
-      r.photos.forEach(p=>{ try{ const w=260,h=Math.round(w*0.62); if(y+h+lh>820){doc.addPage(); y=m;} doc.addImage(p,'JPEG',m,y,w,h); y+=h+8; }catch(_){ line('(Foto konnte nicht eingebettet werden)'); } });
-    });
-    return doc.output('blob');
+function buildPdf() {
+  // --- Felbermayr-Logo einbinden ---
+  const logoUrl = "https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/assetsfelbermayr_logo.png";
+  const logo = new Image();
+  logo.crossOrigin = "anonymous";
+  logo.src = logoUrl;
+
+  const doc = new jsPDF();
+  const m = 14;
+  let y = m;
+
+  const line = (txt = '', bold = false) => {
+    doc.setFont('helvetica', bold ? 'bold' : 'normal');
+    doc.text(txt, m, y);
+    y += 6;
+  };
+
+  // --- Kopfbereich ---
+  line('Fahrzeugkontrolle – Schwerlast/Zugmaschine', true);
+  line(`Datum/Uhrzeit: ${$('#inDate').value || ''}`);
+  line(`Fahrer/in: ${$('#inOp').value || ''}`);
+  line(`Zugmaschine: ${$('#inTr').value || ''} | Auflieger/Modul: ${$('#inTl').value || ''}`);
+  if ($('#inLoc').value) line(`Ort: ${$('#inLoc').value}`);
+  if (state.geo) line(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
+  line();
+
+  // --- Freigabe ---
+  const anyBad = items.some(it => (state.res[it.id] && state.res[it.id].sev === 'Mangel'));
+  const freigabeText = anyBad ? 'NICHT ERTEILT (Mangel vorhanden)' : 'ERTEILT';
+  line(`Freigabe: ${freigabeText}`, true);
+  line();
+
+  // --- Checkpunkte ---
+  line('Checkpunkte:', true);
+  items.forEach(it => {
+    const r = state.res[it.id] || {};
+    const sev = r.sev || '-';
+    line(`[${sev}] ${it.title}`);
+    if (r.note) line(`  Notiz: ${r.note}`);
+  });
+
+  // --- Signatur (falls vorhanden) ---
+  line();
+  line('Digitale Unterschrift:', true);
+  if (state.sig) {
+    try {
+      doc.addImage(state.sig, 'JPEG', m, y, 180, 50);
+      y += 60;
+    } catch (e) {
+      line('(keine Signatur einbettbar)');
+    }
+  } else {
+    line('(keine Signatur)');
   }
+
+  // --- Fotos ---
+  items.forEach(it => {
+    const r = state.res[it.id] || {};
+    if (!r || !r.photos || !r.photos.length) return;
+    doc.addPage();
+    y = m;
+    line('Fotos – ' + it.title, true);
+    y += 6;
+    r.photos.forEach(p => {
+      try {
+        const w = 260, h = Math.round(w * 0.62);
+        if (y + h > 820) { doc.addPage(); y = m; }
+        doc.addImage(p, 'JPEG', m, y, w, h);
+        y += h + 8;
+      } catch (_) {
+        line('(Foto konnte nicht eingebettet werden)');
+      }
+    });
+  });
+
+  // --- Logo oben rechts einfügen ---
+  try {
+    doc.addImage(logo, 'PNG', 150, 10, 40, 15);
+  } catch (e) {
+    console.warn('Logo konnte nicht geladen werden:', e);
+  }
+
+  return doc.output('blob');
+}
+
 
   function onPdf(){
     try{
