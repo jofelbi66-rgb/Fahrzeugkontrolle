@@ -1,3 +1,48 @@
+
+<link rel="apple-touch-icon" href="icon.png">
+<meta name="theme-color" content="#0076BC">
+<meta name="apple-mobile-web-app-title" content="Check dein Fahrzeug">
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fahrzeugkontrolle – Schwerlast (GitHub Pages)</title>
+<meta name="color-scheme" content="light">
+<!-- Eingebettetes App-Icon (Data-URL) -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' rx='24' ry='24' fill='%230076BC'/%3E%3Crect x='20' y='20' width='88' height='88' rx='18' ry='18' fill='none' stroke='white' stroke-width='6'/%3E%3Cpath d='M36 66 L58 86 L94 42' fill='none' stroke='white' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+  :root{--b:#e2e8f0;--mut:#64748b;--ok:#059669;--warn:#d97706;--bad:#dc2626}
+  *{box-sizing:border-box}
+  body{margin:0;font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f8fafc;color:#0f172a}
+  header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--b);z-index:5}
+  .wrap{max-width:980px;margin:0 auto;padding:14px}
+  h1{margin:0;font-size:20px} h2{margin:0 0 10px;font-size:18px}
+  section{background:#fff;border:1px solid var(--b);border-radius:12px;padding:14px;margin:12px 0}
+  .grid{display:grid;gap:10px}
+  @media(min-width:720px){.grid-2{grid-template-columns:1fr 1fr}}
+  label span{font-size:14px;font-weight:600}
+  input,textarea{width:100%;padding:12px;border:1px solid var(--b);border-radius:10px;font:inherit}
+  textarea{min-height:56px;resize:vertical}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .btn{padding:10px 14px;border:1px solid var(--b);background:#fff;border-radius:10px;cursor:pointer;font-weight:600}
+  .btn:hover{background:#f1f5f9}
+  .btn.ok.active{background:var(--ok);color:#fff}
+  .btn.warn.active{background:var(--warn);color:#fff}
+  .btn.bad.active{background:var(--bad);color:#fff}
+  .chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid var(--b);background:#eef2ff}
+  .card{border:1px solid var(--b);border-radius:10px;padding:10px}
+  .status{font-size:14px;color:#64748b}
+  .photos{display:flex;gap:8px;overflow:auto}
+  .ph{position:relative;width:92px;height:92px;border:1px solid var(--b);border-radius:8px;overflow:hidden;background:#f8fafc}
+  .ph img{width:100%;height:100%;object-fit:cover}
+  .x{position:absolute;right:4px;top:4px;width:22px;height:22px;border-radius:11px;border:1px solid var(--b);background:#fff;cursor:pointer;line-height:20px;text-align:center;font-size:14px}
+  footer{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--b)}
+  .help{font-size:12px;color:#475569}
+</style>
+</head>
+<body>
+<header>
   <div class="wrap row" style="justify-content:space-between">
     <h1>Fahrzeugkontrolle – Schwerlast/Zugmaschine</h1>
     <div class="row">
@@ -194,26 +239,24 @@
     $('#btnClearSig').onclick=()=>{ctx.clearRect(0,0,c.width,c.height); state.sig=''; $('#sigStatus').style.display='none'; persist(); };
     $('#btnSaveSig').onclick=()=>{ state.sig=c.toDataURL('image/jpeg',0.8); $('#sigStatus').style.display='inline'; persist(); };
   }
-// ⬇️ alte buildPdf() komplett ersetzen
-async function buildPdf() {
-  // --- Logo sicher laden (ohne Pages-Deploy-Abhängigkeit) ---
-  const RAW_URL = "https://raw.githubusercontent.com/jofelbi66-rgb/Fahrzeugkontrolle/main/assetsfelbermayr_logo.png";
-  let logoDataUrl = null;
-  try {
-    const resp = await fetch(RAW_URL + "?v=logo6", { cache: "no-store" });
-    if (resp.ok) {
-      const blob = await resp.blob();
-      logoDataUrl = await new Promise((resolve) => {
-        const fr = new FileReader();
-        fr.onload = () => resolve(fr.result); // -> data:image/png;base64,...
-        fr.readAsDataURL(blob);
-      });
-    } else {
-      console.warn("Logo-HTTP-Fehler:", resp.status);
-    }
-  } catch (e) {
-    console.warn("Logo-Laden fehlgeschlagen:", e);
+
+function buildPdf() {
+  // --- Felbermayr-Logo einbinden ---
+  // --- Logo oben rechts einfügen (nur wenn vorgeladen) ---
+try {
+  if (window._felberLogoDataUrl) {
+    doc.addImage(window._felberLogoDataUrl, 'PNG', 150, 10, 40, 15); // x,y,Breite,Höhe (mm)
+  } else {
+    console.warn('Logo noch nicht vorgeladen – wird übersprungen.');
   }
+} catch (e) {
+  console.warn('Logo konnte nicht eingebettet werden:', e);
+}
+
+  const logoUrl = "https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/assetsfelbermayr_logo.png";
+  const logo = new Image();
+  logo.crossOrigin = "anonymous";
+  logo.src = logoUrl;
 
   const doc = new jsPDF();
   const m = 14;
@@ -224,18 +267,6 @@ async function buildPdf() {
     doc.text(txt, m, y);
     y += 6;
   };
-
-  // --- Logo oben rechts (falls verfügbar) ---
-  try {
-    if (logoDataUrl) {
-      // x=150, y=10, Breite=40mm, Höhe automatisch (jsPDF skaliert proportional)
-      doc.addImage(logoDataUrl, 'PNG', 150, 10, 40, 0, undefined, 'FAST');
-    } else {
-      console.warn('Logo nicht verfügbar – PDF ohne Logo.');
-    }
-  } catch (e) {
-    console.warn('Logo konnte nicht eingebettet werden:', e);
-  }
 
   // --- Kopfbereich ---
   line('Fahrzeugkontrolle – Schwerlast/Zugmaschine', true);
@@ -295,15 +326,20 @@ async function buildPdf() {
     });
   });
 
+  // --- Logo oben rechts einfügen ---
+  try {
+    doc.addImage(logo, 'PNG', 150, 10, 40, 15);
+  } catch (e) {
+    console.warn('Logo konnte nicht geladen werden:', e);
+  }
+
   return doc.output('blob');
 }
-
-
 
   
   function onPdf(){
     try{
-      const blob= await buildPdf();
+      const blob=buildPdf();
       const url=URL.createObjectURL(blob);
       const a=document.createElement('a'); a.href=url; a.download='Fahrzeugkontrolle.pdf'; a.click();
       URL.revokeObjectURL(url); setStatus('PDF gespeichert ('+(blob.size/1024/1024).toFixed(2)+' MB)');
@@ -346,7 +382,7 @@ async function onMail() {
 
   try {
     setStatus('Erzeuge PDF …');
-    const pdfBlob  = await  buildPdf();
+    const pdfBlob  = buildPdf();
     const base64   = await blobToBase64(pdfBlob);
     const filename = `Fahrzeugkontrolle_${(val('inTr','tr')||'Zug')}_${(val('inTl','tl')||'Aufl')}.pdf`;
 
