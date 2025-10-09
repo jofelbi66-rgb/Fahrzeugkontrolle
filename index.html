@@ -238,24 +238,26 @@
     $('#btnClearSig').onclick=()=>{ctx.clearRect(0,0,c.width,c.height); state.sig=''; $('#sigStatus').style.display='none'; persist(); };
     $('#btnSaveSig').onclick=()=>{ state.sig=c.toDataURL('image/jpeg',0.8); $('#sigStatus').style.display='inline'; persist(); };
   }
-
-function buildPdf() {
-  // --- Felbermayr-Logo einbinden ---
-  // --- Logo oben rechts einfügen (nur wenn vorgeladen) ---
-try {
-  if (window._felberLogoDataUrl) {
-    doc.addImage(window._felberLogoDataUrl, 'PNG', 150, 10, 40, 15); // x,y,Breite,Höhe (mm)
-  } else {
-    console.warn('Logo noch nicht vorgeladen – wird übersprungen.');
+// ⬇️ alte buildPdf() komplett ersetzen
+async function buildPdf() {
+  // --- Logo sicher laden (ohne Pages-Deploy-Abhängigkeit) ---
+  const RAW_URL = "https://raw.githubusercontent.com/jofelbi66-rgb/Fahrzeugkontrolle/main/assetsfelbermayr_logo.png";
+  let logoDataUrl = null;
+  try {
+    const resp = await fetch(RAW_URL + "?v=logo6", { cache: "no-store" });
+    if (resp.ok) {
+      const blob = await resp.blob();
+      logoDataUrl = await new Promise((resolve) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(fr.result); // -> data:image/png;base64,...
+        fr.readAsDataURL(blob);
+      });
+    } else {
+      console.warn("Logo-HTTP-Fehler:", resp.status);
+    }
+  } catch (e) {
+    console.warn("Logo-Laden fehlgeschlagen:", e);
   }
-} catch (e) {
-  console.warn('Logo konnte nicht eingebettet werden:', e);
-}
-
-  const logoUrl = "https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/assetsfelbermayr_logo.png";
-  const logo = new Image();
-  logo.crossOrigin = "anonymous";
-  logo.src = logoUrl;
 
   const doc = new jsPDF();
   const m = 14;
@@ -266,6 +268,18 @@ try {
     doc.text(txt, m, y);
     y += 6;
   };
+
+  // --- Logo oben rechts (falls verfügbar) ---
+  try {
+    if (logoDataUrl) {
+      // x=150, y=10, Breite=40mm, Höhe automatisch (jsPDF skaliert proportional)
+      doc.addImage(logoDataUrl, 'PNG', 150, 10, 40, 0, undefined, 'FAST');
+    } else {
+      console.warn('Logo nicht verfügbar – PDF ohne Logo.');
+    }
+  } catch (e) {
+    console.warn('Logo konnte nicht eingebettet werden:', e);
+  }
 
   // --- Kopfbereich ---
   line('Fahrzeugkontrolle – Schwerlast/Zugmaschine', true);
@@ -325,20 +339,15 @@ try {
     });
   });
 
-  // --- Logo oben rechts einfügen ---
-  try {
-    doc.addImage(logo, 'PNG', 150, 10, 40, 15);
-  } catch (e) {
-    console.warn('Logo konnte nicht geladen werden:', e);
-  }
-
   return doc.output('blob');
 }
+
+
 
   
   function onPdf(){
     try{
-      const blob=buildPdf();
+      const blob= await buildPdf();
       const url=URL.createObjectURL(blob);
       const a=document.createElement('a'); a.href=url; a.download='Fahrzeugkontrolle.pdf'; a.click();
       URL.revokeObjectURL(url); setStatus('PDF gespeichert ('+(blob.size/1024/1024).toFixed(2)+' MB)');
@@ -381,7 +390,7 @@ async function onMail() {
 
   try {
     setStatus('Erzeuge PDF …');
-    const pdfBlob  = buildPdf();
+    const pdfBlob  = await  buildPdf();
     const base64   = await blobToBase64(pdfBlob);
     const filename = `Fahrzeugkontrolle_${(val('inTr','tr')||'Zug')}_${(val('inTl','tl')||'Aufl')}.pdf`;
 
