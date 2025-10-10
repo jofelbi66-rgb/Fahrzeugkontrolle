@@ -52,6 +52,11 @@
  
 </head>
 <body>
+<!-- Logo fürs PDF unsichtbar vorladen -->
+<img id="pdfLogo"
+     src="https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/felbermayr_logo.png?v=5"
+     alt="Felbermayr-Logo" style="display:none" crossorigin="anonymous">
+  
 <header>
   <div class="wrap row" style="justify-content:space-between">
     <h1>Fahrzeugkontrolle – Schwerlast/Zugmaschine</h1>
@@ -269,6 +274,22 @@ try {
   logo.src = logoUrl;
 
   const doc = new jsPDF();
+  const doc = new jsPDF();
+const m = 14;                 // dein Seitenrand
+let y = m;
+
+// ----- Logo oben rechts nur auf Seite 1 -----
+try {
+  const img = document.getElementById('pdfLogo');
+  if (img && img.complete) {
+    const pageW = doc.internal.pageSize.getWidth();
+    const w = 40, h = 15;     // Breite/Höhe (mm)
+    doc.addImage(img, 'PNG', pageW - m - w, 10, w, h);
+  }
+} catch(e) {
+  console.warn('PDF-Logo konnte nicht eingebettet werden:', e);
+}
+
   const m = 14;
   let y = m;
 
