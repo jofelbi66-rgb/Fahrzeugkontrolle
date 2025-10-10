@@ -1,3 +1,4 @@
+
 <link rel="apple-touch-icon" href="icon.png">
 <meta name="theme-color" content="#0076BC">
 <meta name="apple-mobile-web-app-title" content="Check dein Fahrzeug">
@@ -252,8 +253,6 @@
 function buildPdf() {
   // --- Felbermayr-Logo einbinden ---
   // --- Logo oben rechts einfügen (nur wenn vorgeladen) ---
- doc.addImage('https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/felbermayr_logo.png', 'PNG', 420, 20, 120, 40);
-
 try {
   if (window._felberLogoDataUrl) {
     doc.addImage(window._felberLogoDataUrl, 'PNG', 150, 10, 40, 15); // x,y,Breite,Höhe (mm)
@@ -264,25 +263,12 @@ try {
   console.warn('Logo konnte nicht eingebettet werden:', e);
 }
 
-  const logoUrl = "https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/felbermayr_logo.png";
+  const logoUrl = "https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/assetsfelbermayr_logo.png";
   const logo = new Image();
   logo.crossOrigin = "anonymous";
   logo.src = logoUrl;
 
   const doc = new jsPDF();
-  // === Logo oben rechts auf Seite 1 ===
-const LOGO_URL = "https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/felbermayr_logo.png";
-const m = 14;                      // dein Rand (falls schon vorhanden, nicht doppelt definieren)
-const pageW = doc.internal.pageSize.getWidth();
-const logoW = 40;                  // Breite in mm
-const logoH = 15;                  // Höhe in mm
-try {
-  doc.addImage(LOGO_URL, 'PNG', pageW - m - logoW, 10, logoW, logoH); // rechtsbündig
-} catch(e) {
-  // optional ruhig schlucken, PDF soll trotzdem erzeugt werden
-  console.warn('Logo konnte nicht eingebettet werden:', e);
-}
-
   const m = 14;
   let y = m;
 
@@ -509,7 +495,7 @@ ${checkRows}
   <!-- Felbermayr-Logo vorladen (unabhängig vom Pages-Deploy) -->
 <script>
 (async function preloadLogoFelbermayr(){
-  const RAW_URL = "https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/felbermayr_logo.png";
+  const RAW_URL = "https://raw.githubusercontent.com/jofelbi66-rgb/Fahrzeugkontrolle/main/assetsfelbermayr_logo.png";
   try {
     const resp = await fetch(RAW_URL, {cache: "no-store"});
     if (!resp.ok) throw new Error("HTTP "+resp.status);
