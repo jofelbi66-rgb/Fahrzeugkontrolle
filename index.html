@@ -508,6 +508,25 @@ ${checkRows}
   }
 })();
 </script>
+<!-- Felbermayr-Logo für PDF, unsichtbar vorgeladen -->
+<img id="felberLogo" src="https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/felbermayr_logo.png"
+     alt="Felbermayr Logo" style="display:none" crossorigin="anonymous">
+
+<script>
+  // kleines Zusatzscript, das das Logo auf Seite 1 ins PDF setzt und Fotos schrumpft
+  window.patchPdf = function(doc, m, y) {
+    try {
+      const logo = document.getElementById('felberLogo');
+      if (logo && logo.complete) {
+        const pageW = doc.internal.pageSize.getWidth();
+        const w = 40, h = 15;
+        doc.addImage(logo, 'PNG', pageW - m - w, 10, w, h);
+      }
+    } catch(e) {
+      console.warn('Logo nicht eingebettet:', e);
+    }
+  };
+</script>
 
 </body>
 </html>
