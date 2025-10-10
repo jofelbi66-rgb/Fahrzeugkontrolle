@@ -263,7 +263,7 @@ try {
   console.warn('Logo konnte nicht eingebettet werden:', e);
 }
 
-  const logoUrl = "https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/assetsfelbermayr_logo.png";
+  const logoUrl = "https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/felbermayr_logo.png";
   const logo = new Image();
   logo.crossOrigin = "anonymous";
   logo.src = logoUrl;
@@ -495,7 +495,7 @@ ${checkRows}
   <!-- Felbermayr-Logo vorladen (unabhängig vom Pages-Deploy) -->
 <script>
 (async function preloadLogoFelbermayr(){
-  const RAW_URL = "https://raw.githubusercontent.com/jofelbi66-rgb/Fahrzeugkontrolle/main/assetsfelbermayr_logo.png";
+  const RAW_URL = "https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/felbermayr_logo.png";
   try {
     const resp = await fetch(RAW_URL, {cache: "no-store"});
     if (!resp.ok) throw new Error("HTTP "+resp.status);
