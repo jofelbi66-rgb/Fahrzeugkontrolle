@@ -253,6 +253,8 @@
 function buildPdf() {
   // --- Felbermayr-Logo einbinden ---
   // --- Logo oben rechts einfügen (nur wenn vorgeladen) ---
+ doc.addImage('https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/felbermayr_logo.png', 'PNG', 420, 20, 120, 40);
+
 try {
   if (window._felberLogoDataUrl) {
     doc.addImage(window._felberLogoDataUrl, 'PNG', 150, 10, 40, 15); // x,y,Breite,Höhe (mm)
