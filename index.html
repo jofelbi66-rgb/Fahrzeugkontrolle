@@ -271,6 +271,19 @@ try {
   logo.src = logoUrl;
 
   const doc = new jsPDF();
+  // === Logo oben rechts auf Seite 1 ===
+const LOGO_URL = "https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/felbermayr_logo.png";
+const m = 14;                      // dein Rand (falls schon vorhanden, nicht doppelt definieren)
+const pageW = doc.internal.pageSize.getWidth();
+const logoW = 40;                  // Breite in mm
+const logoH = 15;                  // Höhe in mm
+try {
+  doc.addImage(LOGO_URL, 'PNG', pageW - m - logoW, 10, logoW, logoH); // rechtsbündig
+} catch(e) {
+  // optional ruhig schlucken, PDF soll trotzdem erzeugt werden
+  console.warn('Logo konnte nicht eingebettet werden:', e);
+}
+
   const m = 14;
   let y = m;
 
