@@ -269,6 +269,8 @@ try {
   logo.src = logoUrl;
 
   const doc = new jsPDF();
+  window.patchPdf(doc, m, y);
+
   const m = 14;
   let y = m;
 
