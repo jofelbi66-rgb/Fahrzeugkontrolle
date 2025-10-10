@@ -1,4 +1,3 @@
-
 <link rel="apple-touch-icon" href="icon.png">
 <meta name="theme-color" content="#0076BC">
 <meta name="apple-mobile-web-app-title" content="Check dein Fahrzeug">
@@ -251,40 +250,19 @@
   }
 
 function buildPdf() {
-  // 1) ZUERST das jsPDF-Dokument erzeugen
-  const doc = new jsPDF();
+  // --- Felbermayr-Logo einbinden ---
+  // --- Logo oben rechts einfügen (nur wenn vorgeladen) ---
+ doc.addImage('https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/felbermayr_logo.png', 'PNG', 420, 20, 120, 40);
 
-  // 2) Rand und Helfer definieren
-  const m = 14;                            // Seitenrand
-  const line = (txt = '', bold = false) => {
-    doc.setFont('helvetica', bold ? 'bold' : 'normal');
-    doc.text(String(txt), m, y);
-    y += 6;
-  };
-
-  let y = m;
-
-  // 3) (Optional) Logo einfügen – aber NUR jetzt und nur im try/catch
-  try {
-    const img = document.getElementById('pdfLogo'); // <img id="pdfLogo" ...> im <body>
-    if (img && img.complete) {
-      const pageW = doc.internal.pageSize.getWidth();
-      const w = 40, h = 15;                 // Breite/Höhe in mm
-      doc.addImage(img, 'PNG', pageW - m - w, 10, w, h); // oben rechts
-    }
-  } catch (e) {
-    console.warn('PDF-Logo konnte nicht eingebettet werden:', e);
+try {
+  if (window._felberLogoDataUrl) {
+    doc.addImage(window._felberLogoDataUrl, 'PNG', 150, 10, 40, 15); // x,y,Breite,Höhe (mm)
+  } else {
+    console.warn('Logo noch nicht vorgeladen – wird übersprungen.');
   }
-
-  // --------- ab hier dein bestehender PDF-Inhalt ----------
-  // Beispiel:
-  line('Fahrzeugkontrolle – Schwerlast/Zugmaschine', true);
-  // ... (deine weiteren Zeilen, Checkliste, Fotos usw.)
-  // --------------------------------------------------------
-
-  return doc.output('blob');
+} catch (e) {
+  console.warn('Logo konnte nicht eingebettet werden:', e);
 }
-
 
   const logoUrl = "https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/felbermayr_logo.png";
   const logo = new Image();
@@ -292,6 +270,19 @@ function buildPdf() {
   logo.src = logoUrl;
 
   const doc = new jsPDF();
+  // === Logo oben rechts auf Seite 1 ===
+const LOGO_URL = "https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/felbermayr_logo.png";
+const m = 14;                      // dein Rand (falls schon vorhanden, nicht doppelt definieren)
+const pageW = doc.internal.pageSize.getWidth();
+const logoW = 40;                  // Breite in mm
+const logoH = 15;                  // Höhe in mm
+try {
+  doc.addImage(LOGO_URL, 'PNG', pageW - m - logoW, 10, logoW, logoH); // rechtsbündig
+} catch(e) {
+  // optional ruhig schlucken, PDF soll trotzdem erzeugt werden
+  console.warn('Logo konnte nicht eingebettet werden:', e);
+}
+
   const m = 14;
   let y = m;
 
