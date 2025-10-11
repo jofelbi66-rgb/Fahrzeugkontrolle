@@ -276,7 +276,7 @@ function buildPdf() {
     if (domLogo && domLogo.complete) {
       const pageW = doc.internal.pageSize.getWidth();
       const w = 40, h = 15;
-      doc.addImage(domLogo, 'PNG', pageW - m - w, 10, w, h);
+      doc.addImage(domLogo, 'PNG', pageW - m - w, 3, w, h);
     } else {
       console.warn('Logo noch nicht vorgeladen – wird übersprungen.');
     }
