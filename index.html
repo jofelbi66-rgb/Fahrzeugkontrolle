@@ -264,29 +264,31 @@
   }
 
 function buildPdf() {
-  // --- Felbermayr-Logo einbinden ---
-  // --- Logo oben rechts einfügen (nur wenn vorgeladen) ---
-try {
-  if (window._felberLogoDataUrl) {
-    doc.addImage(window._felberLogoDataUrl, 'PNG', 150, 10, 40, 15); // x,y,Breite,Höhe (mm)
-  } else {
-    console.warn('Logo noch nicht vorgeladen – wird übersprungen.');
-  }
-} catch (e) {
-  console.warn('Logo konnte nicht eingebettet werden:', e);
-}
-
-  const logoUrl = "https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/felbermayr_logo.png?v=7";
-    
-  const logo = new Image();
-  logo.crossOrigin = "anonymous";
-  logo.src = logoUrl;
-
   const doc = new jsPDF();
-  window.patchPdf(doc, m, y);
 
-  const m = 14;
-  let y = m;
+  // Immer zuerst definieren, damit es keine TDZ-Fehler gibt
+  const m = 14;      // Außenrand in mm
+  let y = m;         // aktuelle Schreibhöhe
+
+  // Logo oben rechts auf Seite 1 (über das DOM-Image #felberLogo)
+  try {
+    const domLogo = document.getElementById('felberLogo');
+    if (domLogo && domLogo.complete) {
+      const pageW = doc.internal.pageSize.getWidth();
+      const w = 40, h = 15;
+      doc.addImage(domLogo, 'PNG', pageW - m - w, 10, w, h);
+    } else {
+      console.warn('Logo noch nicht vorgeladen – wird übersprungen.');
+    }
+  } catch (e) {
+    console.warn('PDF-Logo konnte nicht eingebettet werden:', e);
+  }
+
+  // Falls vorhanden: Patch anwenden – aber erst NACH m/y
+  if (window.patchPdf) window.patchPdf(doc, m, y);
+
+  // >>> Ab hier lässt du deinen bisherigen PDF-Code unverändert weiterlaufen <<<
+
 // ----- Logo oben rechts auf Seite 1 -----
 try {
   const logo = document.getElementById('felberLogo');
