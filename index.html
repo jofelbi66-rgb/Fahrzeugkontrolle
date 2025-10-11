@@ -264,29 +264,39 @@
   }
 
 function buildPdf() {
-  // --- Felbermayr-Logo einbinden ---
-  // --- Logo oben rechts einfügen (nur wenn vorgeladen) ---
-try {
-  if (window._felberLogoDataUrl) {
-    doc.addImage(window._felberLogoDataUrl, 'PNG', 150, 10, 40, 15); // x,y,Breite,Höhe (mm)
-  } else {
-    console.warn('Logo noch nicht vorgeladen – wird übersprungen.');
+  const doc = new jsPDF();
+
+  // --- EINMALIG und GANZ OBEN definieren ---
+  const margin = 14;        // früher: m
+  let cursorY = margin;     // früher: y
+
+  // --- Logo oben rechts auf Seite 1 (optional) ---
+  try {
+    const domLogo = document.getElementById('felberLogo');
+    if (domLogo && domLogo.complete) {
+      const pageW = doc.internal.pageSize.getWidth();
+      const w = 40, h = 15;
+      doc.addImage(domLogo, 'PNG', pageW - margin - w, 10, w, h);
+    } else {
+      console.warn('Logo noch nicht vorgeladen – wird übersprungen.');
+    }
+  } catch (e) {
+    console.warn('PDF-Logo konnte nicht eingebettet werden:', e);
   }
-} catch (e) {
-  console.warn('Logo konnte nicht eingebettet werden:', e);
+
+  // Falls du eine Helper-Funktion hast:
+  // window.patchPdf(doc, margin, cursorY);   // <— NUR NACH den Definitionen aufrufen
+
+  // … ab hier baust du dein PDF weiter auf …
+  // Beispiel:
+  // doc.setFontSize(12);
+  // doc.text('Überschrift', margin, cursorY);
+  // cursorY += 8;
+  // ...
+  // Am Ende:
+  return doc.output('blob');
 }
 
-  const logoUrl = "https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/felbermayr_logo.png?v=7";
-    
-  const logo = new Image();
-  logo.crossOrigin = "anonymous";
-  logo.src = logoUrl;
-
-  const doc = new jsPDF();
-  window.patchPdf(doc, m, y);
-
-  const m = 14;
-  let y = m;
 // ----- Logo oben rechts auf Seite 1 -----
 try {
   const logo = document.getElementById('felberLogo');
