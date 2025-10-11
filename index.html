@@ -441,7 +441,18 @@ async function onMail() {
     setStatus('Erzeuge PDF …');
     const pdfBlob  = buildPdf();
     const base64   = await blobToBase64(pdfBlob);
-    const filename = `Fahrzeugkontrolle_${(val('inTr','tr')||'Zug')}_${(val('inTl','tl')||'Aufl')}.pdf`;
+    // --- Dateiname mit Fahrer, Zugmaschine, Auflieger und Datum ---
+const fahrer = document.getElementById('inFahrer')?.value?.trim().replace(/\s+/g, '_') || 'Unbekannt';
+const zug = document.getElementById('inZug')?.value?.trim().replace(/\s+/g, '_') || 'Zug_unbekannt';
+const auflieger = document.getElementById('inAuf')?.value?.trim().replace(/\s+/g, '_') || 'Auflieger_unbekannt';
+
+// deutsches Datum + Uhrzeit (z. B. 11-10-2025_13-06)
+const now = new Date();
+const datum = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth()+1).padStart(2, '0')}-${now.getFullYear()}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}`;
+
+// Endgültiger Dateiname
+const fileName = `Fahrzeugkontrolle_${fahrer}_${zug}_${auflieger}_${datum}.pdf`;
+
 
     // ---- Freigabe zuerst berechnen
     const anyBad = items.some(it => (state.res[it.id] && state.res[it.id].sev === 'Mangel'));
