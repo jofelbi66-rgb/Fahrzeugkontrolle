@@ -396,12 +396,20 @@ items.forEach(it => {
   });
 }); // <--- schließt items.forEach
 
-  // --- Logo oben rechts einfügen ---
-  try {
-    doc.addImage(logo, 'PNG', 150, 10, 40, 15);
-  } catch (e) {
-    console.warn('Logo konnte nicht geladen werden:', e);
+ // --- Logo oben rechts ---
+try {
+  if (window._felberLogoDataUrl) {
+    doc.addImage(window._felberLogoDataUrl, 'PNG', 150, 3, 40, 15);
+  } else {
+    console.warn('Logo noch nicht vorgeladen – wird übersprungen.');
   }
+} catch (e) {
+  console.warn('Logo konnte nicht eingebettet werden:', e);
+}
+
+// --- Startposition für Text leicht tiefer ---
+let y = m + 10;
+
 
   return doc.output('blob');
 }
