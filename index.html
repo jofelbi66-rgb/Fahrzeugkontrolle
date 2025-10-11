@@ -419,7 +419,27 @@ async function onMail() {
   };
 
   try {
-    setStatus('Erzeuge PDF …');
+    // ---- Logo sicher laden, bevor das PDF gebaut wird ----
+const logoImg = document.getElementById('felberLogo');
+if (logoImg) {
+  // Falls noch nicht komplett geladen, warten wir kurz
+  if (!logoImg.complete) {
+    try { await logoImg.decode(); } catch {}
+    if (!logoImg.complete) {
+      // Fallback für Browser, die decode() nicht können
+      await new Promise(res => {
+        const done = () => res();
+        logoImg.addEventListener('load', done, { once: true });
+        logoImg.addEventListener('error', done, { once: true });
+        // Sicherheits-Timeout, damit es nie hängen bleibt
+        setTimeout(done, 1500);
+      });
+    }
+  }
+}
+// -------------------------------------------------------
+
+   setStatus('Erzeuge PDF …');
     const pdfBlob  = buildPdf();
     const base64   = await blobToBase64(pdfBlob);
     const filename = `Fahrzeugkontrolle_${(val('inTr','tr')||'Zug')}_${(val('inTl','tl')||'Aufl')}.pdf`;
