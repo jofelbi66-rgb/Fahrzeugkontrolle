@@ -345,25 +345,45 @@ try {
   } else {
     line('(keine Signatur)');
   }
+// --- Fotos ---
+// Fotos proportional, zentriert und ohne Verzerrung einfügen
+items.forEach(it => {
+  const r = state.res[it.id] || {};
+  if (!r || !r.photos || !r.photos.length) return;
 
-  // --- Fotos ---
-  items.forEach(it => {
-    const r = state.res[it.id] || {};
-    if (!r || !r.photos || !r.photos.length) return;
-    doc.addPage();
-    y = m;
-    line('Fotos – ' + it.title, true);
-    y += 6;
-    r.photos.forEach(p => {
-      try {
-        const w = 260, h = Math.round(w * 0.62);
-        if (y + h > 820) { doc.addPage(); y = m; }
-        doc.addImage(p, 'JPEG', m, y, w, h);
-        y += h + 8;
-      } catch (_) {
-        line('(Foto konnte nicht eingebettet werden)');
+  doc.addPage();
+  y = m;
+  line('Fotos - ' + it.title, true);
+  y += 6;
+
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const maxW = pageW - 2 * m;       // verfügbare Breite
+  const maxHperPhoto = 110;         // maximale Foto-Höhe pro Bild (in mm)
+
+  r.photos.forEach(p => {
+    try {
+      const props = doc.getImageProperties(p);
+      const iw = props.width, ih = props.height;
+      const scale = Math.min(maxW / iw, maxHperPhoto / ih, 1);
+      const w = iw * scale;
+      const h = ih * scale;
+
+      if (y + h > pageH - m) {
+        doc.addPage();
+        y = m;
       }
-    });
+
+      const x = m + (maxW - w) / 2;  // horizontal zentrieren
+      doc.addImage(p, 'JPEG', x, y, w, h, undefined, 'FAST');
+      y += h + 8;
+    } catch (e) {
+      line('Foto konnte nicht eingebettet werden', true);
+    }
+  });
+});
+
+ 
   });
 
   // --- Logo oben rechts einfügen ---
