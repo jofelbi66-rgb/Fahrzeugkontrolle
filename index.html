@@ -292,17 +292,7 @@ try {
 
   // >>> Ab hier lässt du deinen bisherigen PDF-Code unverändert weiterlaufen <<<
 
-// ----- Logo oben rechts auf Seite 1 -----
-try {
-  const logo = document.getElementById('felberLogo');
-  if (logo && logo.complete) {
-    const pageW = doc.internal.pageSize.getWidth();
-    const w = 40, h = 15;        // Breite/Höhe in mm
-    const margin = (typeof m === 'number') ? m : 14;
-    doc.addImage(logo, 'PNG', pageW - margin - w, 10, w, h);
-  }
-} catch (e) {
-  console.warn('PDF-Logo konnte nicht eingebettet werden:', e);
+
 }
 
   const line = (txt = '', bold = false) => {
