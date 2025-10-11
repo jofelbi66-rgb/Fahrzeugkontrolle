@@ -354,18 +354,42 @@ try {
     y = m;
     line('Fotos – ' + it.title, true);
     y += 6;
-    r.photos.forEach(p => {
-      try {
-        const w = 260, h = Math.round(w * 0.62);
-        if (y + h > 820) { doc.addPage(); y = m; }
-        doc.addImage(p, 'JPEG', m, y, w, h);
-        y += h + 8;
-      } catch (_) {
-        line('(Foto konnte nicht eingebettet werden)');
-      }
-    });
-  });
+   r.photos.forEach(p => {
+  try {
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const maxW = pageW - 2 * m;   // verfügbare Breite
+    const maxH = 110;             // maximale Höhe je Foto (anpassen: 100–140)
 
+    // Bildmaße ermitteln (ohne asynchronen Code)
+    let iw, ih;
+    try {
+      const props = doc.getImageProperties(p);
+      iw = props.width; ih = props.height;
+    } catch (e) {
+      // Fallback, falls getImageProperties nicht geht
+      iw = maxW; ih = maxH;
+    }
+
+    // proportional skalieren (keine Verzerrung)
+    const scale = Math.min(maxW / iw, maxH / ih, 1);
+    const w = iw * scale;
+    const h = ih * scale;
+
+    // Seitenumbruch falls nötig
+    if (y + h > pageH - m) { doc.addPage(); y = m; }
+
+    // horizontal zentrieren
+    const x = m + (maxW - w) / 2;
+
+    // JPEG + 'FAST' → kleinere PDFs
+    doc.addImage(p, 'JPEG', x, y, w, h, undefined, 'FAST');
+    y += h + 8;
+  } catch (e) {
+    line('Foto konnte nicht eingebettet werden', true);
+  }
+});
+ 
   // --- Logo oben rechts einfügen ---
   try {
     doc.addImage(logo, 'PNG', 150, 10, 40, 15);
