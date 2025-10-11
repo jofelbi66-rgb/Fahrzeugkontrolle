@@ -264,31 +264,17 @@
   }
 
 function buildPdf() {
-  // immer zuerst das PDF-Objekt
-  const doc = new jsPDF();
-
-  // *** WICHTIG: m/y gleich am Anfang definieren (sonst TDZ-Fehler) ***
-  const m = 14;
-  let y = m;
-
-  // *** KEINE Verwendung von 'm' oberhalb dieser Stelle! ***
-
-  // ----- Logo oben rechts NUR auf Seite 1 (über DOM-Image #felberLogo) -----
-  try {
-    const logo = document.getElementById('felberLogo');
-    if (logo && logo.complete) {
-      const pageW = doc.internal.pageSize.getWidth();
-      const w = 40, h = 15;
-      doc.addImage(logo, 'PNG', pageW - m - w, 10, w, h);
-    } else {
-      console.warn('Logo noch nicht vorgeladen – wird übersprungen.');
-    }
-  } catch (e) {
-    console.warn('PDF-Logo konnte nicht eingebettet werden:', e);
+  // --- Felbermayr-Logo einbinden ---
+  // --- Logo oben rechts einfügen (nur wenn vorgeladen) ---
+try {
+  if (window._felberLogoDataUrl) {
+    doc.addImage(window._felberLogoDataUrl, 'PNG', 150, 10, 40, 15); // x,y,Breite,Höhe (mm)
+  } else {
+    console.warn('Logo noch nicht vorgeladen – wird übersprungen.');
   }
-
-  // >>> ab hier bleibt dein bisheriger PDF-Aufbau (Texte, Checkliste, Fotos, return doc.output('blob'), etc.)
-
+} catch (e) {
+  console.warn('Logo konnte nicht eingebettet werden:', e);
+}
 
   const logoUrl = "https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/assetsfelbermayr_logo.png";
   const logo = new Image();
