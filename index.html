@@ -268,21 +268,8 @@ function buildPdf() {
 
   // Immer zuerst definieren, damit es keine TDZ-Fehler gibt
   const m = 14;      // Außenrand in mm
-  let y = m;         // aktuelle Schreibhöhe
+  let y = m + 10;         // aktuelle Schreibhöhe
 
-  // Logo oben rechts auf Seite 1 (über das DOM-Image #felberLogo)
-  try {
-    const domLogo = document.getElementById('felberLogo');
-    if (domLogo && domLogo.complete) {
-      const pageW = doc.internal.pageSize.getWidth();
-      const w = 40, h = 15;
-      doc.addImage(domLogo, 'PNG', pageW - m - w, 3, w, h);
-    } else {
-      console.warn('Logo noch nicht vorgeladen – wird übersprungen.');
-    }
-  } catch (e) {
-    console.warn('PDF-Logo konnte nicht eingebettet werden:', e);
-  }
 
   // Falls vorhanden: Patch anwenden – aber erst NACH m/y
   if (window.patchPdf) window.patchPdf(doc, m, y);
