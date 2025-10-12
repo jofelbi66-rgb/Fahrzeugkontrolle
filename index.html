@@ -387,56 +387,55 @@ try {
     line('(keine Signatur)');
   }
 
- // --- Fotos ---
+// --- Fotos ---
 items.forEach(it => {
   const r = state.res[it.id] || {};
   if (!r || !r.photos || !r.photos.length) return;
 
-  // Überschrift und Startposition für die Fotoseite
+  // neue Seite für Fotos dieses Items
   doc.addPage();
   y = m;
-  line('Fotos – ' + it.title, true);
+  line(`Fotos – ${it.title}`, true);
   y += 6;
 
   r.photos.forEach(p => {
     try {
-      // Seiten- und Layoutwerte
       const pageW = doc.internal.pageSize.getWidth();
       const pageH = doc.internal.pageSize.getHeight();
-      const maxW  = pageW - 2 * m;   // verfügbare Breite (mit Rand)
-      const maxH  = 70;             // maximale Höhe pro Foto (mm)
+      const maxW = pageW - 2 * m;
+      const maxH = 60;              // kleiner als vorher (z.B. 60 mm)
 
-      // Bildabmessungen ermitteln (ohne async)
-      let iw = 0, ih = 0;
+      // Bildabmessungen ermitteln (Fallbacks sind wichtig)
+      let iw = 800, ih = 600;
       try {
         const props = doc.getImageProperties(p);
-        iw = (props?.width  || props?.w || 1);
-        ih = (props?.height || props?.h || 1);
-      } catch (_) {
-        // Fallback, falls Eigenschaften nicht gelesen werden können
-        iw = maxW; ih = maxH;
-      }
+        iw = props?.width  || props?.w || iw;
+        ih = props?.height || props?.h || ih;
+      } catch (_) { /* okay, Fallback bleibt */ }
 
-      // proportional skalieren (keine Verzerrung)
-      // 1) Normale, unverzerrte Skalierung berechnen
-let scale = Math.min(maxW / iw, maxH / ih);
+      // proportional skalieren (keine Verzerrung) + zusätzlicher Drossel-Faktor
+      let scale = Math.min(maxW / iw, maxH / ih);
+      scale *= 0.75;                // 25% kleiner -> spürbar weniger KB
 
-// 2) Extra-Drossel für kleinere Dateien (20 % kleiner)
-scale *= 0.8;
+      const w = Math.max(1, iw * scale);
+      const h = Math.max(1, ih * scale);
 
-const w = iw * scale;
-const h = ih * scale;
+      // Seitenumbruch falls nötig
+      if (y + h > pageH - m) { doc.addPage(); y = m; }
 
-// 3) Stärkere JPEG-Kompression
-doc.addImage(p, 'JPEG', x, y, w, h, undefined, 'SLOW');
+      // horizontal zentrieren
+      const x = m + (maxW - w) / 2;
 
+      // bewusst ohne zusätzliche Optionen -> maximal kompatibel
+      doc.addImage(p, 'JPEG', x, y, w, h);
 
       y += h + 6;
     } catch (e) {
-      line('Foto konnte nicht eingebettet werden', true);
+      line('(Foto konnte nicht eingebettet werden)', true);
     }
   });
-}); // <--- schließt items.forEach
+});
+
 
   // --- Logo oben rechts einfügen ---
   try {
