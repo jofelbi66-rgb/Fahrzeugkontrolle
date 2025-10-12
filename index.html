@@ -404,7 +404,7 @@ items.forEach(it => {
       const pageW = doc.internal.pageSize.getWidth();
       const pageH = doc.internal.pageSize.getHeight();
       const maxW  = pageW - 2 * m;   // verfügbare Breite (mit Rand)
-      const maxH  = 100;             // maximale Höhe pro Foto (mm)
+      const maxH  = 85;             // maximale Höhe pro Foto (mm)
 
       // Bildabmessungen ermitteln (ohne async)
       let iw = 0, ih = 0;
@@ -429,7 +429,8 @@ items.forEach(it => {
       const x = m + (maxW - w) / 2;
 
       // JPEG + 'FAST' → kleinere PDFs
-      doc.addImage(p, 'JPEG', x, y, w, h, undefined, 'FAST');
+      doc.addImage(p, 'JPEG', x, y, w, h, undefined, 'MEDIUM');
+
       y += h + 6;
     } catch (e) {
       line('Foto konnte nicht eingebettet werden', true);
