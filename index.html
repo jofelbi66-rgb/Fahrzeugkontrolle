@@ -270,21 +270,28 @@ function buildPdf() {
   const m = 14;      // Außenrand in mm
   let y = m;         // aktuelle Schreibhöhe
 
-// ----- Logo oben rechts auf Seite 1 (nur DOM-Image #felberLogo) -----
+/* ---- Logo rechts oben (kleiner & mit Abstand zum Text) ---- */
 try {
   const domLogo = document.getElementById('felberLogo');
   if (domLogo && domLogo.complete) {
-    const pageW = doc.internal.pageSize.getWidth();
-    const w = 40, h = 15;     // Breite/Höhe in mm (kannst du anpassen)
-    const top = 6;            // Abstand von oben in mm (kleiner = höher)
-    const rightMargin = m;    // m = Seitenrand, existiert bereits
-    doc.addImage(domLogo, 'PNG', pageW - rightMargin - w, top, w, h);
+    const pageW  = doc.internal.pageSize.getWidth();
+    const LOGO_W = 36;     // Breite in mm (kleiner)
+    const LOGO_H = 13.5;   // Höhe proportional zum Original
+    const Y_LOGO = 6;      // Abstand von oben in mm
+    const X_LOGO = pageW - m - LOGO_W;  // rechtsbündig mit Seitenrand m
+
+    // Logo einfügen
+    doc.addImage(domLogo, 'PNG', X_LOGO, Y_LOGO, LOGO_W, LOGO_H);
+
+    // Text erst unterhalb des Logos beginnen lassen (etwas mehr Luft)
+    y = Math.max(y, Y_LOGO + LOGO_H + 8);
   } else {
-    console.warn('PDF-Logo nicht vorladen -> Logo wird übersprungen.');
+    console.warn('Logo noch nicht vorgeladen – wird übersprungen.');
   }
 } catch (e) {
   console.warn('PDF-Logo konnte nicht eingebettet werden:', e);
 }
+
 
       
 
@@ -394,6 +401,36 @@ items.forEach(it => {
   } catch (e) {
     console.warn('Logo konnte nicht geladen werden:', e);
   }
+/* ==== Logo auf allen Folgeseiten (ab Seite 2) rechts oben wiederholen ==== */
+try {
+  const domLogo = document.getElementById('felberLogo');
+  if (domLogo && domLogo.complete) {
+    const pages = doc.getNumberOfPages();
+    const pageW = doc.internal.pageSize.getWidth();
+    const LOGO_W = 28;    // kleiner als auf Seite 1
+    const LOGO_H = 10.5;  // proportional passend
+    const Y_LOGO = 6;     // gleicher Kopf-Abstand wie auf Seite 1
+    const X_LOGO = pageW - m - LOGO_W;
+
+    // Optional dezenter (wenn jsPDF GState verfügbar: leichte Transparenz)
+    let gsNormal = null, gsFaded = null;
+    if (doc.GState && doc.setGState) {
+      gsNormal = new doc.GState({ opacity: 1 });
+      gsFaded  = new doc.GState({ opacity: 0.85 }); // 85% Deckkraft
+    }
+
+    for (let i = 2; i <= pages; i++) {
+      doc.setPage(i);
+      if (gsFaded) doc.setGState(gsFaded);
+      doc.addImage(domLogo, 'PNG', X_LOGO, Y_LOGO, LOGO_W, LOGO_H);
+      if (gsNormal) doc.setGState(gsNormal);
+    }
+  } else {
+    console.warn('Folgelogo: DOM-Logo nicht bereit – ausgelassen.');
+  }
+} catch (e) {
+  console.warn('Folgelogo: Konnte nicht eingebettet werden:', e);
+}
 
   return doc.output('blob');
 }
