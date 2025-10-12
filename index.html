@@ -317,8 +317,8 @@ try {
   const domLogo = document.getElementById('felberLogo');
   if (domLogo && domLogo.complete) {
     const pageW  = doc.internal.pageSize.getWidth();
-    const LOGO_W = 36;     // Breite in mm (kleiner)
-    const LOGO_H = 13.5;   // Höhe proportional zum Original
+    const LOGO_W = 32;     // Breite in mm (kleiner)
+    const LOGO_H = 12;   // Höhe proportional zum Original
     const Y_LOGO = 6;      // Abstand von oben in mm
     const X_LOGO = pageW - m - LOGO_W;  // rechtsbündig mit Seitenrand m
 
@@ -404,7 +404,7 @@ items.forEach(it => {
       const pageW = doc.internal.pageSize.getWidth();
       const pageH = doc.internal.pageSize.getHeight();
       const maxW  = pageW - 2 * m;   // verfügbare Breite (mit Rand)
-      const maxH  = 85;             // maximale Höhe pro Foto (mm)
+      const maxH  = 70;             // maximale Höhe pro Foto (mm)
 
       // Bildabmessungen ermitteln (ohne async)
       let iw = 0, ih = 0;
@@ -418,18 +418,18 @@ items.forEach(it => {
       }
 
       // proportional skalieren (keine Verzerrung)
-      const scale = Math.min(maxW / iw, maxH / ih, 1);
-      const w = Math.max(1, iw * scale);
-      const h = Math.max(1, ih * scale);
+      // 1) Normale, unverzerrte Skalierung berechnen
+let scale = Math.min(maxW / iw, maxH / ih);
 
-      // Seitenumbruch falls nötig
-      if (y + h > pageH - m) { doc.addPage(); y = m; }
+// 2) Extra-Drossel für kleinere Dateien (20 % kleiner)
+scale *= 0.8;
 
-      // horizontal zentrieren
-      const x = m + (maxW - w) / 2;
+const w = iw * scale;
+const h = ih * scale;
 
-      // JPEG + 'FAST' → kleinere PDFs
-      doc.addImage(p, 'JPEG', x, y, w, h, undefined, 'MEDIUM');
+// 3) Stärkere JPEG-Kompression
+doc.addImage(p, 'JPEG', x, y, w, h, undefined, 'SLOW');
+
 
       y += h + 6;
     } catch (e) {
