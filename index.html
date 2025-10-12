@@ -270,37 +270,29 @@ function buildPdf() {
   const m = 14;      // Außenrand in mm
   let y = m;         // aktuelle Schreibhöhe
 
-  // Logo oben rechts auf Seite 1 (über das DOM-Image #felberLogo)
-  try {
-    const domLogo = document.getElementById('felberLogo');
-    if (domLogo && domLogo.complete) {
-      const pageW = doc.internal.pageSize.getWidth();
-      const w = 40, h = 15;
-      doc.addImage(domLogo, 'PNG', pageW - m - w, 3, w, h);
-    } else {
-      console.warn('Logo noch nicht vorgeladen – wird übersprungen.');
-    }
-  } catch (e) {
-    console.warn('PDF-Logo konnte nicht eingebettet werden:', e);
+// ----- Logo oben rechts auf Seite 1 (nur DOM-Image #felberLogo) -----
+try {
+  const domLogo = document.getElementById('felberLogo');
+  if (domLogo && domLogo.complete) {
+    const pageW = doc.internal.pageSize.getWidth();
+    const w = 40, h = 15;     // Breite/Höhe in mm (kannst du anpassen)
+    const top = 6;            // Abstand von oben in mm (kleiner = höher)
+    const rightMargin = m;    // m = Seitenrand, existiert bereits
+    doc.addImage(domLogo, 'PNG', pageW - rightMargin - w, top, w, h);
+  } else {
+    console.warn('PDF-Logo nicht vorladen -> Logo wird übersprungen.');
   }
+} catch (e) {
+  console.warn('PDF-Logo konnte nicht eingebettet werden:', e);
+}
+
+      
 
   // Falls vorhanden: Patch anwenden – aber erst NACH m/y
   if (window.patchPdf) window.patchPdf(doc, m, y);
 
   // >>> Ab hier lässt du deinen bisherigen PDF-Code unverändert weiterlaufen <<<
 
-// ----- Logo oben rechts auf Seite 1 -----
-try {
-  const logo = document.getElementById('felberLogo');
-  if (logo && logo.complete) {
-    const pageW = doc.internal.pageSize.getWidth();
-    const w = 40, h = 15;        // Breite/Höhe in mm
-    const margin = (typeof m === 'number') ? m : 14;
-    doc.addImage(logo, 'PNG', pageW - margin - w, 10, w, h);
-  }
-} catch (e) {
-  console.warn('PDF-Logo konnte nicht eingebettet werden:', e);
-}
 
   const line = (txt = '', bold = false) => {
     doc.setFont('helvetica', bold ? 'bold' : 'normal');
