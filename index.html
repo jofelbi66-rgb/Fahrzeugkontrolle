@@ -263,8 +263,50 @@
     $('#btnSaveSig').onclick=()=>{ state.sig=c.toDataURL('image/jpeg',0.8); $('#sigStatus').style.display='inline'; persist(); };
   }
 
+// mm → Pixel (Browser ≈ 96 dpi)
+function mmToPx(mm){ return Math.round(mm * 96 / 25.4); }
+
+// Bild als JPEG verkleinern (Zielgröße in mm, capped in px, mit Qualitätsfaktor)
+async function shrinkToJPEG(srcDataUrl, targetWmm, targetHmm, opts = {}) {
+  const quality = (opts.quality ?? 0.65);      // 0.60–0.75 ist ein guter Bereich
+  const MAX_PX  = (opts.maxPx  ?? 1400);       // längste Kante hart deckeln
+
+  const img = await new Promise((resolve, reject) => {
+    const im = new Image();
+    im.onload  = () => resolve(im);
+    im.onerror = reject;
+    im.src     = srcDataUrl;
+  });
+
+  // Zielgröße in Pixel (Seitenverhältnis halten)
+  const r = img.width / img.height;
+  let pw = mmToPx(targetWmm), ph = mmToPx(targetHmm);
+  if (pw / ph > r) pw = Math.round(ph * r); else ph = Math.round(pw / r);
+
+  // harte Obergrenze für die längste Kante
+  const long = Math.max(pw, ph);
+  if (long > MAX_PX) {
+    const s = MAX_PX / long;
+    pw = Math.round(pw * s);
+    ph = Math.round(ph * s);
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width  = pw;
+  canvas.height = ph;
+  const ctx = canvas.getContext('2d', { alpha: false });
+  ctx.drawImage(img, 0, 0, pw, ph);
+
+  // wichtig: JPEG + Qualitätsfaktor
+  return canvas.toDataURL('image/jpeg', quality);
+}
+
+      
+
+      
 function buildPdf() {
-  const doc = new jsPDF();
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+
 
   // Immer zuerst definieren, damit es keine TDZ-Fehler gibt
   const m = 14;      // Außenrand in mm
