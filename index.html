@@ -65,6 +65,27 @@
      src="https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/felbermayr_logo.png?v=5"
      alt="Felbermayr-Logo" style="display:none" crossorigin="anonymous">
  
+<script>
+/* Erzeuge eine kleinere JPEG-Variante des Logos (einmalig im Browser) */
+(function () {
+  const img = document.getElementById('felberLogo');
+  function makeSmall() {
+    try {
+      if (!img.complete) return;                // warten bis geladen
+      const maxW = 600;                         // auf ~600px Breite begrenzen
+      const scale = Math.min(1, maxW / img.naturalWidth);
+      const w = Math.round(img.naturalWidth * scale);
+      const h = Math.round(img.naturalHeight * scale);
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      window._felberLogoSmall = c.toDataURL('image/jpeg', 0.7); // Qualität 70 %
+    } catch (e) { /* egal – Fallback greift */ }
+  }
+  if (img.complete) makeSmall(); else img.addEventListener('load', makeSmall);
+})();
+</script>
+
 <header>
   <div class="wrap row" style="justify-content:space-between">
     <h1>Fahrzeugkontrolle – Schwerlast/Zugmaschine</h1>
