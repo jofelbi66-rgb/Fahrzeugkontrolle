@@ -103,8 +103,11 @@
     <div class="grid grid-2">
       <label><span>Dispo-E-Mail *</span><input id="inDispo" placeholder="dispo@firma.de"></label>
       <label><span>CC (optional)</span><input id="inCc" placeholder="du@firma.de"></label>
-    </div>
+          </div>
     <p class="help">PDF wird per Google-Relay verschickt (anhängend). Die E-Mail-Adressen werden nur lokal gespeichert.</p>
+  <label><span>BCC (optional)</span><input id="inBcc" placeholder="leitung@firma.de"></label>
+
+  <p class="help">PDF wird per Google-Relay verschickt (anhängend). Die E-Mail-Adressen werden nur lokal gespeichert.</p>      
   </section>
 
   <section>
@@ -513,6 +516,33 @@ try {
 async function onMail() {
   const problems = [];
   const $id = (x) => document.getElementById(x);
+// feste Standard-Empfänger (bei Bedarf hier anpassen)
+const DEFAULT_DISPO = 'j.jansen@felbermayr.cc';
+const DEFAULT_CC    = ''; // z. B. 'leitstand@…'
+
+function applyRecipientLock() {
+  const lock = document.getElementById('lockRecipients').checked;
+  const dispo = document.getElementById('inDispo');
+  const cc    = document.getElementById('inCc');
+
+  // Vorgabewerte sicherstellen
+  if (!dispo.value) dispo.value = DEFAULT_DISPO;
+  if (!cc.value && DEFAULT_CC) cc.value = DEFAULT_CC;
+
+  // Sperren/entsperren
+  dispo.readOnly = lock;
+  cc.readOnly    = lock;
+
+  // optische Kennzeichnung
+  dispo.style.backgroundColor = lock ? '#f1f5f9' : '#fff';
+  cc.style.backgroundColor    = lock ? '#f1f5f9' : '#fff';
+}
+
+// Umschalter verbinden
+document.getElementById('lockRecipients').addEventListener('change', applyRecipientLock);
+
+// beim Start einmal anwenden
+applyRecipientLock();
 
   // ---- Pflichtprüfungen
   if (!$id('inDispo')?.value) problems.push('Dispo-E-Mail fehlt');
@@ -605,16 +635,18 @@ ${checkRows}
          <div style="margin-top:10px">(Details siehe PDF-Anhang)</div>
        </div>`;
 
-    // ---- Payload & Versand
-    const payload = {
-      to: $id('inDispo').value.trim(),
-      cc: ($id('inCc')?.value || '').trim(),
-      subject,
-      text: bodyText,
-      html: bodyHtml,
-      filename,
-      pdfBase64: base64
-    };
+    
+    // ---- Payload & Versand ----
+const payload = {
+    to: $id('inDispo')?.value.trim(),
+    cc: $id('inCc')?.value.trim() || '',
+    bcc: $id('inBcc')?.value.trim() || '', // <— NEU: optionales BCC-Feld
+    subject,
+    text: bodyText,
+    html: bodyHtml,
+    filename,
+    pdfBase64: base64
+};
 
     setStatus('Sende über Relay …');
 
