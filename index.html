@@ -89,6 +89,32 @@
 <header>
   <div class="wrap row" style="justify-content:space-between">
     <h1>Fahrzeugkontrolle – Schwerlast/Zugmaschine</h1>
+      <!-- Zusatzkopfdaten -->
+<section class="row" id="kopfdaten-extra" style="gap: 18px; align-items: center; margin-top: 6px;">
+  <!-- 1) Los -->
+  <fieldset style="border:0; padding:0; margin:0;">
+    <legend style="font-weight:600; margin-bottom:4px;">Los *</legend>
+    <label class="chip"><input type="radio" name="los" value="4.1"> 4.1</label>
+    <label class="chip"><input type="radio" name="los" value="4.2"> 4.2</label>
+  </fieldset>
+
+  <!-- 2) Art des Transports -->
+  <fieldset style="border:0; padding:0; margin:0;">
+    <legend style="font-weight:600; margin-bottom:4px;">Art des Transports *</legend>
+    <label class="chip"><input type="radio" name="art" value="Lastfahrt ISA – Abspülplatz"> Lastfahrt ISA – Abspülplatz</label>
+    <label class="chip"><input type="radio" name="art" value="Leerfahrt Abspülplatz – ISA"> Leerfahrt Abspülplatz – ISA</label>
+    <label class="chip"><input type="radio" name="art" value="Transitfahrt ISA – ISA"> Transitfahrt ISA – ISA</label>
+  </fieldset>
+
+  <!-- 3) ISA -->
+  <fieldset style="border:0; padding:0; margin:0;">
+    <legend style="font-weight:600; margin-bottom:4px;">ISA *</legend>
+    <label class="chip"><input type="radio" name="isa" value="Zeven"> Zeven</label>
+    <label class="chip"><input type="radio" name="isa" value="Berkhof"> Berkhof</label>
+    <label class="chip"><input type="radio" name="isa" value="Hildesheim"> Hildesheim</label>
+  </fieldset>
+</section>
+  
     <div class="row">
       <button class="btn" id="btnGeo">GPS-Ort</button>
       <button class="btn" id="btnPdf">PDF speichern</button>
