@@ -614,11 +614,20 @@ applyRecipientLock();
     const tr  = val('inTr',   'tr');
     const tl  = val('inTl',   'tl');
     const loc = val('inLoc',  'loc');
+    // NEU: Zusatzkopfdaten aus Radiogruppen
+const los = valRadio('los');
+const art = valRadio('art');
+const isa = valRadio('isa');
+    
 
     const lines = [];
     lines.push(`Datum/Uhrzeit: ${dt || '-'}`);
     lines.push(`Fahrer/in: ${op || '-'}`);
     lines.push(`Zugmaschine: ${tr || '-'} | Auflieger/Modul: ${tl || '-'}`);
+     lines.push(`Los: ${los || '-'}`);
+lines.push(`Art des Transports: ${art || '-'}`);
+lines.push(`ISA: ${isa || '-'}`);
+   
     if (loc) lines.push(`Ort: ${loc}`);
     if (state.geo) lines.push(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
 
@@ -631,7 +640,19 @@ applyRecipientLock();
     }).join('\n');
 
     // ---- Text & HTML
-    const subject = `Fahrzeugkontrolle ${tr || 'Zug'} / ${tl || 'Aufl'}`;
+    
+// subject erweitern (nur wenn Werte da sind)
+const subject = `Fahrzeugkontrolle ${tr || 'Zug'} / ${tl || 'Aufl'}`
+  + (los ? ` – Los ${los}` : '')
+  + (isa ? ` – ${isa}` : '');
+
+// filename erweitern
+const filename = `Fahrzeugkontrolle_${tr || 'Zug'}_${tl || 'Aufl'}`
+  + (los ? `_Los-${los.replace('.', '_')}` : '')
+  + (isa ? `_${isa}` : '')
+  + '.pdf';
+
+        
 
     const bodyText = `Fahrzeugkontrolle – Schwerlast/Zugmaschine
 ${lines.join('\n')}
