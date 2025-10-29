@@ -543,13 +543,23 @@ async function onMail() {
   const problems = [];
   const $id = (x) => document.getElementById(x);
 // feste Standard-Empfänger (bei Bedarf hier anpassen)
-const DEFAULT_DISPO = 'j.jansen@felbermayr.cc';
+const DEFAULT_DISPO = 'Dispo-Memmingen@felbermayr.cc';
 const DEFAULT_CC    = ''; // z. B. 'leitstand@…'
+ <label class="chip">
+  <input type="checkbox" id="lockRecipients">
+  <span>Empfänger sperren</span>
+</label>
+     
 
 function applyRecipientLock() {
   const lock = document.getElementById('lockRecipients').checked;
   const dispo = document.getElementById('inDispo');
   const cc    = document.getElementById('inCc');
+// nach function applyRecipientLock() { ... } einfügen:
+document.getElementById('lockRecipients')?.addEventListener('change', applyRecipientLock);
+applyRecipientLock(); // einmalig beim Laden anwenden
+
+      
 
   // Vorgabewerte sicherstellen
   if (!dispo.value) dispo.value = DEFAULT_DISPO;
@@ -664,16 +674,16 @@ ${checkRows}
     
     // ---- Payload & Versand ----
 const payload = {
- to: 'Dispo-Memmingen@felbermayr.cc',
-   
-    cc: $id('inCc')?.value.trim() || '',
-    bcc: $id('inBcc')?.value.trim() || '', // <— NEU: optionales BCC-Feld
-    subject,
-    text: bodyText,
-    html: bodyHtml,
-    filename,
-    pdfBase64: base64
+  to:  dispo,         // <— nicht fest!
+  cc:  cc,
+  bcc: bcc,           // falls kein BCC-Feld vorhanden ist: einfach weglassen
+  subject,
+  text:  bodyText,
+  html:  bodyHtml,
+  filename,
+  pdfBase64: base64
 };
+
 
     setStatus('Sende über Relay …');
 
