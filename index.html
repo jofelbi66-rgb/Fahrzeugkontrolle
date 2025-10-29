@@ -432,6 +432,12 @@ try {
   // --- Signatur (falls vorhanden) ---
   line();
   line('Digitale Unterschrift:', true);
+// --- Hintergrund für Signaturfeld (weiß) ---
+doc.setFillColor(255, 255, 255);  // Weiß
+doc.rect(x, y, w, h, 'F');        // Fläche ausfüllen ('F' = Fill)
+
+      
+      
   if (state.sig) {
     try {
       doc.addImage(state.sig, 'JPEG', m, y, 180, 50);
