@@ -545,7 +545,7 @@ try {
 
   const blobToBase64 = blob => new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(blob); });
 
-<script>
+
 async function onMail () {
   const $id = (x) => document.getElementById(x);
 
@@ -660,7 +660,7 @@ async function onMail () {
     alert('Fehler beim Versand: ' + (err?.message || err));
   }
 }
-</script>
+
 
   
 <body>
