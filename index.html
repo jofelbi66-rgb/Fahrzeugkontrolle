@@ -546,15 +546,29 @@ try {
   const blobToBase64 = blob => new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(blob); });
 
 async function onMail() {
-  const problems = [];
-  const $id = (x) => document.getElementById(x);
+  try {
+    setStatus('Erzeuge PDF …');
+    const pdfBlob = buildPdf();
+    const base64 = await blobToBase64(pdfBlob);
+    const filename = `Fahrzeugkontrolle_${(val('inTr','tr')||'Zug')}_${(val('inTl','tl')||'Aufl')}.pdf`;
 
-  // feste Standard-Empfänger
-  const DEFAULT_DISPO = 'Dispo-Memmingen@felbermayr.cc';
-  const DEFAULT_CC = ''; // z. B. 'leitung@felbermayr.cc'
+    // ---- Freigabe zuerst berechnen
+    const anyBad = items.some(it => (state.res[it.id] && state.res[it.id].sev === 'Mangel'));
+    const freigabeText = anyBad ? 'NICHT ERTEILT (Mangel vorhanden)' : 'ERTEILT';
 
-  // hier KEIN HTML einfügen!
+    // ---- Kopfzeilen (robust lesen)
+    const dt  = val('inDate', 'date');
+    const op  = val('inOp', 'op');
+    const tr  = val('inTr', 'tr');
+    const tl  = val('inTl', 'tl');
+    const loc = val('inLoc', 'loc');
+
+    // … (dein restlicher Versand-Code)
+  } catch (err) {
+    alert('Fehler beim PDF-Erstellen: ' + err.message);
+  }
 }
+
 
      
 
