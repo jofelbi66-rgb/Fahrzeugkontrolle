@@ -545,176 +545,106 @@ try {
 
   const blobToBase64 = blob => new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(blob); });
 
-async function onMail() {
-  try {
-    setStatus('Erzeuge PDF …');
-    const pdfBlob = buildPdf();
-    const base64 = await blobToBase64(pdfBlob);
-    const filename = `Fahrzeugkontrolle_${(val('inTr','tr')||'Zug')}_${(val('inTl','tl')||'Aufl')}.pdf`;
+<script>
+async function onMail () {
+  const $id = (x) => document.getElementById(x);
 
-    // ---- Freigabe zuerst berechnen
-    const anyBad = items.some(it => (state.res[it.id] && state.res[it.id].sev === 'Mangel'));
-    const freigabeText = anyBad ? 'NICHT ERTEILT (Mangel vorhanden)' : 'ERTEILT';
-
-    // ---- Kopfzeilen (robust lesen)
-    const dt  = val('inDate', 'date');
-    const op  = val('inOp', 'op');
-    const tr  = val('inTr', 'tr');
-    const tl  = val('inTl', 'tl');
-    const loc = val('inLoc', 'loc');
-
-    // … (dein restlicher Versand-Code)
-  } catch (err) {
-    alert('Fehler beim PDF-Erstellen: ' + err.message);
-  }
-}
-
-
-     
-
-function applyRecipientLock() {
-  const lock = document.getElementById('lockRecipients').checked;
-  const dispo = document.getElementById('inDispo');
-  const cc    = document.getElementById('inCc');
-// nach function applyRecipientLock() { ... } einfügen:
-document.getElementById('lockRecipients')?.addEventListener('change', applyRecipientLock);
-applyRecipientLock(); // einmalig beim Laden anwenden
-
-      
-
-  // Vorgabewerte sicherstellen
-  if (!dispo.value) dispo.value = DEFAULT_DISPO;
-  if (!cc.value && DEFAULT_CC) cc.value = DEFAULT_CC;
-
-  // Sperren/entsperren
-  dispo.readOnly = lock;
-  cc.readOnly    = lock;
-
-  // optische Kennzeichnung
-  dispo.style.backgroundColor = lock ? '#f1f5f9' : '#fff';
-  cc.style.backgroundColor    = lock ? '#f1f5f9' : '#fff';
-}
-
-// Umschalter verbinden
-document.getElementById('lockRecipients').addEventListener('change', applyRecipientLock);
-
-// beim Start einmal anwenden
-applyRecipientLock();
-
-  // ---- Pflichtprüfungen
-  if (!$id('inDispo')?.value) problems.push('Dispo-E-Mail fehlt');
-  if (!$id('inOp')?.value || !$id('inTr')?.value || !$id('inTl')?.value)
-    problems.push('Fahrer/in und beide Kennzeichen sind Pflicht');
-
-  const notRated = items
-    .filter(it => !(state.res[it.id] && state.res[it.id].sev))
-    .map(it => it.title);
-  if (notRated.length) problems.push('Nicht bewertet: ' + notRated.join(', '));
+  // --- Pflichtfelder prüfen (minimal, bei Bedarf erweitern)
+  const problems = [];
+  if (!$id('inOp')?.value) problems.push('Fahrer/in fehlt');
+  if (!$id('inTr')?.value || !$id('inTl')?.value) problems.push('Kennzeichen (Zug/Auflieger) fehlen');
 
   if (problems.length) {
     alert('Versand blockiert:\n- ' + problems.join('\n- '));
     return;
   }
 
-  // ---- Helfer: Werte robust lesen (Input → Text → LocalStorage)
-  const fromLS = (k) => (localStorage.getItem(k) || '').trim();
-  const val = (id, lsKey=null) => {
-    const el = $id(id);
-    const v = el ? (('value' in el ? el.value : el.textContent) || '').trim() : '';
-    if (v) return v;
-    if (lsKey) {
-      const w = fromLS(lsKey);
-      if (w) return w;
-    }
-    return '';
-  };
+  // --- Werte robust lesen
+  const dt = ($id('inDate')?.value || '').trim();
+  const op = ($id('inOp')?.value || '').trim();
+  const tr = ($id('inTr')?.value || '').trim();
+  const tl = ($id('inTl')?.value || '').trim();
+  const loc = ($id('inLoc')?.value || '').trim();
+
+  // --- Dateiname + Subject
+  const ts = dt ? dt.replace(/[^\dT]/g, '').replace('T','_').slice(0,15) : '';
+  const filename = `Fahrzeugkontrolle_${tr || 'Zug'}_${tl || 'Aufl'}_${op || 'NN'}_${ts || ''}.pdf`;
+  const subject  = `Fahrzeugkontrolle ${tr || 'Zug'} / ${tl || 'Aufl'} – ${op || ''} – ${dt || ''}`;
+
+  // --- Zusammenfassungstext (Plain + HTML)
+  const lines = [];
+  lines.push(`Datum/Uhrzeit: ${dt || ''}`);
+  lines.push(`Fahrer/in: ${op || ''}`);
+  lines.push(`Zugmaschine: ${tr || ''} | Auflieger/Modul: ${tl || ''}`);
+  if (loc) lines.push(`Ort: ${loc}`);
+  if (window.state?.geo) {
+    lines.push(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
+  }
+
+  // Freigabe aus Checkliste
+  const anyBad = (window.items || []).some(it => (state.res[it.id] && state.res[it.id].sev === 'Mangel'));
+  const freigabeText = anyBad ? 'NICHT ERTEILT (Mangel vorhanden)' : 'ERTEILT';
+
+  // kompaktes Checklisten-Protokoll (Plain)
+  const checkRows = (window.items || []).map(it => {
+    const r = state.res[it.id] || {};
+    const sev = r.sev || '-';
+    const note = (r.note && r.note.trim()) ? ` – ${r.note.trim()}` : '';
+    return `• [${sev}] ${it.title}${note}`;
+  }).join('\n');
+
+  const bodyText =
+    `Fahrzeugkontrolle – Schwerlast/Zugmaschine\n` +
+    lines.join('\n') + `\n\n` +
+    `Freigabe: ${freigabeText}\n\n` +
+    `Checkpunkte:\n${checkRows}\n\n` +
+    `(Details siehe PDF-Anhang)`;
+
+  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  const bodyHtml =
+    `<div style="font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;font-size:14px;line-height:1.5">
+       <h2 style="margin:0 0 8px 0">Fahrzeugkontrolle – Schwerlast/Zugmaschine</h2>
+       <div>${lines.map(s => `<div>${esc(s)}</div>`).join('')}</div>
+       <div style="margin:10px 0 0 0"><strong>Freigabe: ${esc(freigabeText)}</strong></div>
+       <div style="margin:10px 0 4px 0"><strong>Checkpunkte:</strong></div>
+       <ul style="margin:0;padding-left:18px">
+         ${(window.items || []).map(it => {
+            const r = state.res[it.id] || {};
+            const sev = r.sev || '-';
+            const note = (r.note && r.note.trim()) ? ` – ${esc(r.note.trim())}` : '';
+            return `<li>[${esc(sev)}] ${esc(it.title)}${note}</li>`;
+         }).join('')}
+       </ul>
+       <div style="margin-top:10px">(Details siehe PDF-Anhang)</div>
+     </div>`;
 
   try {
+    // --- PDF erzeugen
     setStatus('Erzeuge PDF …');
-    const pdfBlob  = buildPdf();
-    const base64   = await blobToBase64(pdfBlob);
-    const filename = `Fahrzeugkontrolle_${(val('inTr','tr')||'Zug')}_${(val('inTl','tl')||'Aufl')}.pdf`;
+    const pdfBlob = buildPdf();
+    const base64  = await blobToBase64(pdfBlob);
 
-    // ---- Freigabe zuerst berechnen
-    const anyBad = items.some(it => (state.res[it.id] && state.res[it.id].sev === 'Mangel'));
-    const freigabeText = anyBad ? 'NICHT ERTEILT (Mangel vorhanden)' : 'ERTEILT';
+    // --- Versand-Payload (feste Dispo-Adresse; CC/BCC optional aus Feldern)
+    const payload = {
+      to: 'Dispo-Memmingen@felbermayr.cc',
+      cc:  ($id('inCc')?.value  || '').trim(),
+      bcc: ($id('inBcc')?.value || '').trim(),
+      subject,
+      text: bodyText,
+      html: bodyHtml,
+      filename,
+      pdfBase64: base64
+    };
 
-    // ---- Kopfzeilen (robust lesen)
-    const dt  = val('inDate', 'date');
-    const op  = val('inOp',   'op');
-    const tr  = val('inTr',   'tr');
-    const tl  = val('inTl',   'tl');
-    const loc = val('inLoc',  'loc');
-
-    const lines = [];
-    lines.push(`Datum/Uhrzeit: ${dt || '-'}`);
-    lines.push(`Fahrer/in: ${op || '-'}`);
-    lines.push(`Zugmaschine: ${tr || '-'} | Auflieger/Modul: ${tl || '-'}`);
-    if (loc) lines.push(`Ort: ${loc}`);
-    if (state.geo) lines.push(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
-
-    // ---- Checkliste kompakt
-    const checkRows = items.map(it => {
-      const r = state.res[it.id] || {};
-      const sev = r.sev || '-';
-      const note = (r.note && r.note.trim()) ? ` – ${r.note.trim()}` : '';
-      return `• [${sev}] ${it.title}${note}`;
-    }).join('\n');
-
-    // ---- Text & HTML
-    const subject = `Fahrzeugkontrolle ${tr || 'Zug'} / ${tl || 'Aufl'}`;
-
-    const bodyText = `Fahrzeugkontrolle – Schwerlast/Zugmaschine
-${lines.join('\n')}
-
-Freigabe: ${freigabeText}
-
-Checkpunkte:
-${checkRows}
-
-(Details siehe PDF-Anhang)`;
-
-    const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
-    const bodyHtml =
-      `<div style="font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;font-size:14px;line-height:1.5">
-         <h2 style="margin:0 0 8px 0">Fahrzeugkontrolle – Schwerlast/Zugmaschine</h2>
-         <div>${lines.map(s => `<div>${esc(s)}</div>`).join('')}</div>
-         <div style="margin:10px 0 0 0"><strong>Freigabe: ${esc(freigabeText)}</strong></div>
-         <div style="margin:10px 0 4px 0"><strong>Checkpunkte:</strong></div>
-         <ul style="margin:0;padding-left:18px">
-           ${items.map(it => {
-             const r = state.res[it.id] || {};
-             const sev = r.sev || '-';
-             const note = (r.note && r.note.trim()) ? ' – ' + esc(r.note.trim()) : '';
-             return `<li>[${esc(sev)}] ${esc(it.title)}${note}</li>`;
-           }).join('')}
-         </ul>
-         <div style="margin-top:10px">(Details siehe PDF-Anhang)</div>
-       </div>`;
-
-    
-    // ---- Payload & Versand ----
-const payload = {
-  to:  dispo,         // <— nicht fest!
-  cc:  cc,
-  bcc: bcc,           // falls kein BCC-Feld vorhanden ist: einfach weglassen
-  subject,
-  text:  bodyText,
-  html:  bodyHtml,
-  filename,
-  pdfBase64: base64
-};
-
-
+    // --- senden
     setStatus('Sende über Relay …');
-
     try {
       await fetch(RELAY_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-    } catch (e) {
+    } catch (_) {
       await fetch(RELAY_URL, {
         method: 'POST',
         mode: 'no-cors',
@@ -725,15 +655,13 @@ const payload = {
 
     setStatus('Bericht gesendet ✓');
     alert('E-Mail mit PDF-Anhang wurde gesendet.');
-
   } catch (err) {
     setStatus('Senden fehlgeschlagen');
     alert('Fehler beim Versand: ' + (err?.message || err));
   }
 }
-
-})();
 </script>
+
   
 <body>
   <!-- Felbermayr-Logo vorladen (unabhängig vom Pages-Deploy) -->
