@@ -130,6 +130,12 @@
       <label><span>Dispo-E-Mail *</span><input id="inDispo" placeholder="dispo@firma.de"></label>
       <label><span>CC (optional)</span><input id="inCc" placeholder="du@firma.de"></label>
           </div>
+<label class="chip">
+  <input type="checkbox" id="lockRecipients">
+  <span>Empfänger sperren</span>
+</label>
+
+        
     <p class="help">PDF wird per Google-Relay verschickt (anhängend). Die E-Mail-Adressen werden nur lokal gespeichert.</p>
   <label><span>BCC (optional)</span><input id="inBcc" placeholder="leitung@firma.de"></label>
 
@@ -542,13 +548,14 @@ try {
 async function onMail() {
   const problems = [];
   const $id = (x) => document.getElementById(x);
-// feste Standard-Empfänger (bei Bedarf hier anpassen)
-const DEFAULT_DISPO = 'Dispo-Memmingen@felbermayr.cc';
-const DEFAULT_CC    = ''; // z. B. 'leitstand@…'
- <label class="chip">
-  <input type="checkbox" id="lockRecipients">
-  <span>Empfänger sperren</span>
-</label>
+
+  // feste Standard-Empfänger
+  const DEFAULT_DISPO = 'Dispo-Memmingen@felbermayr.cc';
+  const DEFAULT_CC = ''; // z. B. 'leitung@felbermayr.cc'
+
+  // hier KEIN HTML einfügen!
+}
+
      
 
 function applyRecipientLock() {
