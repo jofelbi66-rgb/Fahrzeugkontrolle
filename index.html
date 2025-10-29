@@ -189,7 +189,7 @@
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <script>
-(function(){
+(async function(){
   // >>>> HIER IST DEIN RELAY (funktioniert bereits) <<<<
   const RELAY_URL = 'https://script.google.com/macros/s/AKfycbwNt85E1m00CkLoL2U5wI8hCK5C2Zu0SzMb4x__sw7nXkGtk1nwXnYvXsRyv8CUDlsC/exec';
 
@@ -661,8 +661,6 @@ async function onMail () {
   }
 }
 
-
-  
 <body>
   <!-- Felbermayr-Logo vorladen (unabhängig vom Pages-Deploy) -->
   <img id="felberLogo"
@@ -670,7 +668,12 @@ async function onMail () {
        alt="Felbermayr Logo"
        style="display:none"
        crossorigin="anonymous">
+})();          <!-- schließt das (async ()=>{ … }) -->
+</script>      <!-- schließt den Haupt-Scriptblock -->
 
+
+
+             
 <script>
 // Zusatzscript: Hook für nachträgliche PDF-Anpassungen (aktuell leer)
 window.patchPdf = function (doc, m, y) {
