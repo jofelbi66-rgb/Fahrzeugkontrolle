@@ -630,7 +630,9 @@ window.addEventListener('DOMContentLoaded', ()=>{
   // Buttons
   document.getElementById('btnPdf') ?.addEventListener('click', onPdf);
   document.getElementById('btnMail')?.addEventListener('click', onMail);
-  document.getElementById('btnGeo') ?.addEventListener('click', onGeo);
+ const btnGeo = document.getElementById('btnGeo');
+if (btnGeo) btnGeo.addEventListener('click', () => window.onGeo());
+
   document.getElementById('inLogo')?.addEventListener('change', onLogoPick);
 
   // Pflicht: Checkliste zeichnen
