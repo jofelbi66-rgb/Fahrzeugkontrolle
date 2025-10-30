@@ -461,10 +461,12 @@ y = sigY + sigBoxH + 6;
    // CORS-sicherer Versand (fixer Empfänger)
 setStatus('Sende über Relay …');
 
+setStatus('Sende über Relay …');
+
 try {
   await fetch(RELAY_URL, {
     method: 'POST',
-    mode: 'no-cors', // CORS-safe
+    mode: 'no-cors', // kein Preflight, daher CORS-safe
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify({
       to: 'Dispo-Memmingen@felbermayr.cc',
@@ -480,15 +482,14 @@ try {
 
   setStatus('Bericht gesendet ✓');
   alert('E-Mail an Dispo-Memmingen wurde gesendet.');
-} 
+}
 catch (err) {
   console.error('[onMail] Fehler beim Versand:', err);
   setStatus('Senden fehlgeschlagen');
   alert('Fehler beim Versand: ' + (err?.message || err));
 }
+})();
 
-
-  })();
   </script>
 
   <!-- Optionaler PDF-Hook (leer) -->
