@@ -168,6 +168,49 @@
       {id:'m1', sec:'Umweltschutz',          title:'Mobile Auffangmatten vorhanden & einsatzbereit', req:1}
     ];
 
+// --- DIAGNOSE START ---
+console.log('[INIT] Script geladen');
+window.addEventListener('DOMContentLoaded', ()=>{
+  console.log('[INIT] DOMContentLoaded fired');
+
+  const ck = document.getElementById('checklist');
+  console.log('[INIT] #checklist:', !!ck);
+  if (!ck) {
+    alert('FEHLT: <div id="checklist"></div> im HTML.');
+  }
+
+  const sig = document.getElementById('sig');
+  console.log('[INIT] #sig canvas:', !!sig);
+  if (!sig) {
+    alert('FEHLT: <canvas id="sig"></canvas> im HTML.');
+  }
+
+  try {
+    console.log('[INIT] renderChecklist vorhanden:', typeof renderChecklist);
+    if (typeof renderChecklist === 'function') {
+      renderChecklist();
+      console.log('[INIT] renderChecklist aufgerufen');
+    } else {
+      alert('renderChecklist ist nicht definiert – Script wurde vorher abgebrochen.');
+    }
+  } catch (e) {
+    console.error('[INIT] Fehler bei renderChecklist:', e);
+    alert('Fehler bei renderChecklist: ' + (e?.message || e));
+  }
+
+  try {
+    if (typeof initSignature === 'function') {
+      initSignature();
+      console.log('[INIT] initSignature aufgerufen');
+    } else {
+      alert('initSignature ist nicht definiert – Script wurde vorher abgebrochen.');
+    }
+  } catch (e) {
+    console.error('[INIT] Fehler bei initSignature:', e);
+    alert('Fehler bei initSignature: ' + (e?.message || e));
+  }
+});
+// --- DIAGNOSE ENDE ---
 
 
 // -------- Signatur-Setup (MUSS vor dem DOMContentLoaded stehen) --------
