@@ -458,22 +458,34 @@ y = sigY + sigBoxH + 6;
 };
 
 
-        setStatus('Sende über Relay …');
-        // CORS-sicher: ohne Preflight (no-cors) und text/plain
-        await fetch(RELAY_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(payload)
-        });
+   // CORS-sicherer Versand (fixer Empfänger)
+setStatus('Sende über Relay …');
+try {
+  await fetch(RELAY_URL, {
+    method: 'POST',
+    mode: 'no-cors', // kein Preflight, daher CORS-safe
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({
+      to: 'Dispo-Memmingen@felbermayr.cc',   // feste Zieladresse
+      cc: '',
+      bcc: '',
+      subject: subject || 'Fahrzeugkontrolle – Schwerlast/Zugmaschine',
+      text: 'Automatische Fahrzeugkontrolle mit PDF-Anhang.',
+      html: '<b>Automatische Fahrzeugkontrolle</b><br>PDF im Anhang.',
+      filename: filename || 'Fahrzeugkontrolle.pdf',
+      pdfBase64: base64                      // kommt von blobToBase64(pdfBlob)
+    })
+  });
 
-        setStatus('Bericht gesendet ✓');
-        alert('E-Mail mit PDF-Anhang wurde gesendet.');
-      } catch (err) {
-        console.error('[onMail] Fehler:', err);
-        setStatus('Senden fehlgeschlagen');
-        alert('Fehler beim Versand: ' + (err?.message || err));
-      }
+  setStatus('Bericht gesendet ✓');
+  alert('E-Mail an Dispo-Memmingen wurde gesendet.');
+
+} catch (err) {
+  console.error('[onMail] Fehler beim Versand:', err);
+  setStatus('Senden fehlgeschlagen');
+  alert('Fehler beim Versand: ' + (err?.message || err));
+}
+  
     }
   })();
   </script>
