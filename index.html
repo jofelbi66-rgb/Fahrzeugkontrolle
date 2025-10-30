@@ -279,7 +279,7 @@
       c.addEventListener('pointerdown',e=>{down=true; last=P(e);}); c.addEventListener('pointerup',()=>{down=false; last=null;}); c.addEventListener('pointerleave',()=>{down=false; last=null;});
       c.addEventListener('pointermove',e=>{if(!down)return; const p=P(e); ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(p.x,p.y); ctx.stroke(); last=p;});
       $('#btnClearSig').onclick=()=>{ctx.clearRect(0,0,c.width,c.height); state.sig=''; $('#sigStatus').style.display='none'; persist(); };
-      $('#btnSaveSig').onclick=()=>{ state.sig=c.toDataURL('image/jpeg',0.8); $('#sigStatus').style.display='inline'; persist(); };
+      $('#btnSaveSig').onclick=()=>{ state.sig=c.toDataURL('image/png',0.8); $('#sigStatus').style.display='inline'; persist(); };
     }
 
     // mm → Pixel (Browser ≈ 96 dpi)
@@ -365,7 +365,7 @@ if (state.sig) {
   try {
     // Signatur mit leichtem Innenabstand (Padding)
     const pad = 3;
-    doc.addImage(state.sig, 'JPEG', sigX + pad, sigY + pad, sigBoxW - 2 * pad, sigBoxH - 2 * pad);
+    doc.addImage(state.sig, 'PNG', sigX + pad, sigY + pad, sigBoxW - 2 * pad, sigBoxH - 2 * pad);
     y = sigY + sigBoxH + 6;
   } catch (e) {
     line('(keine Signatur einbettbar)');
