@@ -169,6 +169,63 @@
     ];
 
     // Init
+      {id:'m1', sec:'Umweltschutz', title:'Mobile Auffangmatten vorhanden & einsatzbereit', req:1}
+];
+
+// ⬇️ HIER direkt einfügen (Zeile 171)
+function initSignature(){
+  const c = document.getElementById('sig');
+  if (!c) return;
+  const ctx = c.getContext('2d');
+
+  size();
+  window.addEventListener('resize', size);
+
+  function size(){
+    const w = c.clientWidth, h = 170, px = window.devicePixelRatio || 1;
+    c.style.width = w + 'px';
+    c.style.height = h + 'px';
+    c.width  = Math.round(w * px);
+    c.height = Math.round(h * px);
+    ctx.setTransform(px,0,0,px,0,0);
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#111827';
+  }
+
+  let down = false, last = null;
+  const P = e => {
+    const r = c.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  };
+
+  c.addEventListener('pointerdown', e => { down = true; last = P(e); });
+  c.addEventListener('pointerup',   () => { down = false; last = null; });
+  c.addEventListener('pointerleave',() => { down = false; last = null; });
+  c.addEventListener('pointermove', e => {
+    if (!down) return;
+    const p = P(e);
+    ctx.beginPath();
+    ctx.moveTo(last.x, last.y);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    last = p;
+  });
+
+  // Buttons
+  const save = document.getElementById('btnSaveSig');
+  const clr  = document.getElementById('btnClearSig');
+  if (clr)  clr.onclick  = () => { ctx.clearRect(0,0,c.width,c.height); state.sig=''; document.getElementById('sigStatus').style.display='none'; persist(); };
+  if (save) save.onclick = () => {
+    state.sig = c.toDataURL('image/png');
+    document.getElementById('sigStatus').style.display='inline';
+    persist();
+  };
+}
+
+// ⬇️ Diese Zeile bleibt wie sie ist
+window.addEventListener('DOMContentLoaded', ()=>{
+
     window.addEventListener('DOMContentLoaded', ()=>{
       ['inCc','inBcc','inOp','inTr','inTl','inLoc'].forEach(id=>{ if(state[id]) $('#'+id).value=state[id]; });
       $('#inDate').value = localDateTimeValue();
