@@ -456,7 +456,17 @@
         const cc  = ($id('inCc')?.value || '').trim();
         const bcc = ($id('inBcc')?.value || '').trim();
 
-        const payload = { to, cc, bcc, subject, text: bodyText, html: bodyHtml, filename, pdfBase64: base64 };
+       const payload = {
+  to: "Dispo-Memmingen@felbermayr.cc", // feste Empfängeradresse
+  cc: "",
+  bcc: "",
+  subject,
+  text: bodyText,
+  html: bodyHtml,
+  filename,
+  pdfBase64: base64
+};
+
 
         setStatus('Sende über Relay …');
         // CORS-sicher: ohne Preflight (no-cors) und text/plain
