@@ -640,16 +640,29 @@ try {
   return; // Versand abbrechen, sonst kommt wieder der Fehler unten
 }
 
-// --- Versand ---
+// --- PDF bauen + Base64 (eigener Try/Catch) ---
+try {
+  console.log('[onMail] PDF bauen …');
+  const pdfBlob = buildPdf();                  // kann werfen
+  var base64 = await blobToBase64(pdfBlob);    // kann werfen
+  // Achtung: "base64" muss später im Payload verwendet werden (pdfBase64: base64).
+} catch (err) {
+  console.error('[onMail] Fehler beim PDF-Erstellen/Base64:', err);
+  setStatus('Senden fehlgeschlagen');
+  alert('PDF-Erstellung fehlgeschlagen: ' + (err?.message || err));
+  return; // hier abbrechen
+}
+
+// --- Versand (eigener Try/Catch) ---
 try {
   setStatus('Sende über Relay …');
   console.log('[onMail] fetch → RELAY_URL');
 
   await fetch(RELAY_URL, {
     method: 'POST',
-    // mode: 'no-cors', // nur nutzen, wenn dein Apps Script keine CORS-Header sendet
+    // mode: 'no-cors', // nur falls dein Apps Script keine CORS-Header sendet
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(payload),             // payload enthält u. a. pdfBase64: base64
   });
 
   setStatus('Bericht gesendet ✓');
@@ -658,7 +671,9 @@ try {
   console.error('[onMail] Fehler beim Versand:', err);
   setStatus('Senden fehlgeschlagen');
   alert('Fehler beim Versand: ' + (err?.message || err));
+  return;
 }
+
 
 
 
