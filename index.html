@@ -624,16 +624,62 @@ async function onGeo(){
     alert('GPS fehlgeschlagen: ' + (err?.message || err));
   });
 }
+// --- GLOBAL: GPS-Ortung + Reverse-Geocoding ---
+window.onGeo = async function onGeo(){
+  if (!navigator.geolocation) { alert('Kein GPS verfügbar.'); return; }
+
+  navigator.geolocation.getCurrentPosition(async pos => {
+    state.geo = {
+      lat: +pos.coords.latitude.toFixed(6),
+      lon: +pos.coords.longitude.toFixed(6),
+      acc: Math.round(pos.coords.accuracy)
+    };
+
+    const out = document.getElementById('geoOut');
+    if (out) out.textContent = `${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`;
+
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${state.geo.lat}&lon=${state.geo.lon}&zoom=10&addressdetails=1`;
+      const r = await fetch(url, { headers:{ 'Accept':'application/json' } });
+      const d = await r.json(); const a = d.address || {};
+      const place = a.city || a.town || a.village || a.municipality || a.county || '';
+      if (place) {
+        const inLoc = document.getElementById('inLoc');
+        if (inLoc) inLoc.value = place;
+        state.inLoc = place;
+        localStorage.setItem(SKEY, JSON.stringify(state));
+      }
+    } catch(_) {}
+  }, err => alert('GPS fehlgeschlagen: ' + (err?.message || err)));
+};
+
+// --- GLOBAL: Logo auswählen/komprimieren ---
+window.onLogoPick = async function onLogoPick(e){
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  const data = await compressImageFile(f, 320, 0.8);     // nutzt deine vorhandene Helper
+  const info = await probeImage(data);                    // nutzt deine vorhandene Helper
+  state.logo = data;
+  state.logoAspect = info.w / info.h || 1;
+  const li = document.getElementById('logoInfo');
+  if (li) li.textContent = `Logo gespeichert (${info.w}×${info.h})`;
+  localStorage.setItem(SKEY, JSON.stringify(state));
+};
 
 // -------- Init --------
 window.addEventListener('DOMContentLoaded', ()=>{
   // Buttons
   document.getElementById('btnPdf') ?.addEventListener('click', onPdf);
   document.getElementById('btnMail')?.addEventListener('click', onMail);
- const btnGeo = document.getElementById('btnGeo');
-if (btnGeo) btnGeo.addEventListener('click', () => window.onGeo());
+const btnGeo  = document.getElementById('btnGeo');
+if (btnGeo && typeof window.onGeo === 'function') {
+  btnGeo.addEventListener('click', window.onGeo);
+}
 
-  document.getElementById('inLogo')?.addEventListener('change', onLogoPick);
+const inLogo = document.getElementById('inLogo');
+if (inLogo && typeof window.onLogoPick === 'function') {
+  inLogo.addEventListener('change', window.onLogoPick);
+}
 
   // Pflicht: Checkliste zeichnen
   renderChecklist();
