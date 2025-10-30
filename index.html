@@ -300,133 +300,110 @@
       return canvas.toDataURL('image/jpeg', quality);
     }
 
-    function buildPdf() {
-      const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
-      const m = 14; // Außenrand
-      const pageW  = doc.internal.pageSize.getWidth();
-      const pageH  = doc.internal.pageSize.getHeight();
-      let y = m;   // aktuelle Schreibhöhe
+// --- Checkpunkte ---
+// (ALTEN Block bis zur bisherigen Unterschrift löschen und durch Folgendes ersetzen)
 
-      // Logo rechts oben (Seite 1)
-      try {
-        const domLogo = document.getElementById('felberLogo');
-        if (domLogo && domLogo.complete) {
-          const LOGO_W = 32, LOGO_H = 12, Y_LOGO = 6, X_LOGO = pageW - m - LOGO_W;
-          doc.addImage(domLogo, 'PNG', X_LOGO, Y_LOGO, LOGO_W, LOGO_H);
-          y = Math.max(y, Y_LOGO + LOGO_H + 8);
-        }
-      } catch (e) { console.warn('PDF-Logo Seite 1:', e); }
+// Tabellen-Layout
+const colW = { status: 28, foto: 32, text: doc.internal.pageSize.getWidth() - 2*m - 28 - 32 };
+const x    = { status: m, text: m + 28, foto: doc.internal.pageSize.getWidth() - m - colW.foto };
+const pageW = doc.internal.pageSize.getWidth();
+const pageH = doc.internal.pageSize.getHeight();
 
-      const line = (txt = '', bold = false) => {
-        doc.setFont('helvetica', bold ? 'bold' : 'normal');
-        doc.text(String(txt||''), m, y);
-        y += 6;
-      };
+// Tabellenkopf
+doc.setDrawColor(200);
+doc.setFillColor(245,245,245);
+doc.rect(m, y, pageW - 2*m, 8, 'F');
+doc.setFont('helvetica','bold');
+doc.text('Status',    x.status + 2, y + 5);
+doc.text('Checkpunkt',x.text   + 2, y + 5);
+doc.text('Foto',      x.foto   + 2, y + 5);
+y += 10;
 
-      // Kopfbereich
-      line('Fahrzeugkontrolle – Schwerlast/Zugmaschine', true);
-      line(`Datum/Uhrzeit: ${$('#inDate').value || ''}`);
-      line(`Fahrer/in: ${$('#inOp').value || ''}`);
-      line(`Zugmaschine: ${$('#inTr').value || ''} | Auflieger/Modul: ${$('#inTl').value || ''}`);
-      if ($('#inLoc').value) line(`Ort: ${$('#inLoc').value}`);
-      if (state.geo) line(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
-      line();
+const rowHmin = 8;
+const zebraA = [255,255,255];
+const zebraB = [248,250,252]; // sehr helles Grau
+let rowIndex = 0;
 
-      // Freigabe
-      const anyBad = Object.keys(state.res).some(k => state.res[k]?.sev === 'Mangel');
-      const freigabeText = anyBad ? 'NICHT ERTEILT (Mangel vorhanden)' : 'ERTEILT';
-      line(`Freigabe: ${freigabeText}`, true);
-      line();
+// Tabelle füllen
+items.forEach(it => {
+  const r    = state.res[it.id] || {};
+  const sev  = r.sev || '-';
+  const txt  = it.title + (r.note ? ('\nNotiz: ' + r.note) : '');
+  const fotos = (r.photos && r.photos.length) ? `ja (${r.photos.length})` : '–';
 
-      // Checkpunkte
-      line('Checkpunkte:', true);
-      items.forEach(it => {
-        const r = state.res[it.id] || {};
-        const sev = r.sev || '-';
-        line(`[${sev}] ${it.title}`);
-        if (r.note) line(`  Notiz: ${r.note}`);
-      });
+  // Umbruch für Textspalte
+  doc.setFont('helvetica','normal');
+  const wrapped = doc.splitTextToSize(txt, colW.text - 4);
+  const rowH = Math.max(rowHmin, 5 + wrapped.length * 4);
 
-      // Unterschrift
-      line('Digitale Unterschrift:', true);
+  // Platz lassen für die große Signaturbox (55 mm + etwas Luft)
+  if (y + rowH > pageH - m - 70) {
+    doc.addPage();
+    y = m;
+    // Kopf auf Folgeseite wiederholen
+    doc.setDrawColor(200);
+    doc.setFillColor(245,245,245);
+    doc.rect(m, y, pageW - 2*m, 8, 'F');
+    doc.setFont('helvetica','bold');
+    doc.text('Status',    x.status + 2, y + 5);
+    doc.text('Checkpunkt',x.text   + 2, y + 5);
+    doc.text('Foto',      x.foto   + 2, y + 5);
+    y += 10;
+  }
 
-// Koordinaten und Größe definieren
-const sigBoxW = pageW - 2 * m;   // Breite = Seitenbreite minus Ränder
-const sigBoxH = 40;              // Höhe des Felds (mm)
-const sigX = m;                  // linker Rand
-const sigY = y + 2;              // etwas Abstand zum Titel
+  // Zebra-Hintergrund
+  const bg = (rowIndex++ % 2 === 0) ? zebraA : zebraB;
+  doc.setFillColor(bg[0], bg[1], bg[2]);
+  doc.rect(m, y - 1, pageW - 2*m, rowH, 'F');
 
-// Weißer Hintergrund (gefülltes Rechteck)
-doc.setFillColor(255, 255, 255);
+  // Zellinhalte
+  doc.setFont('helvetica','normal');
+  doc.text(`[${sev}]`, x.status + 2, y + 5);
+  doc.text(wrapped,     x.text   + 2, y + 5);
+  doc.text(fotos,       x.foto   + 2, y + 5);
+
+  // feine Abschlusslinie
+  doc.setDrawColor(230);
+  doc.line(m, y - 1 + rowH, pageW - m, y - 1 + rowH);
+
+  y += rowH + 2;
+});
+
+// --- Digitale Unterschrift (groß, weißer Hintergrund) ---
+y += 4;
+doc.setFont('helvetica','bold');
+doc.text('Digitale Unterschrift:', m, y);
+y += 4;
+
+const sigBoxW = pageW - 2*m;
+const sigBoxH = 55;         // EXTRA VIEL PLATZ
+const sigX = m;
+const sigY = y + 2;
+
+// Weißes Feld
+doc.setFillColor(255,255,255);
 doc.rect(sigX, sigY, sigBoxW, sigBoxH, 'F');
 
-// Wenn Signatur vorhanden → einbetten
 if (state.sig) {
   try {
-    // Signatur mit leichtem Innenabstand (Padding)
+    // PNG bevorzugen (Transparenz), sonst JPEG
     const pad = 3;
-    doc.addImage(state.sig, 'PNG', sigX + pad, sigY + pad, sigBoxW - 2 * pad, sigBoxH - 2 * pad);
-    y = sigY + sigBoxH + 6;
-  } catch (e) {
-    line('(keine Signatur einbettbar)');
+    const fmt = (state.sig.startsWith('data:image/png') ? 'PNG' : 'JPEG');
+    doc.addImage(state.sig, fmt, sigX + pad, sigY + pad, sigBoxW - 2*pad, sigBoxH - 2*pad);
+  } catch {
+    doc.setFont('helvetica','normal');
+    doc.text('(keine Signatur einbettbar)', m, sigY + 6);
   }
 } else {
-  // Keine Signatur → grauen Rahmen anzeigen
-  doc.setDrawColor(180);
-  doc.rect(sigX, sigY, sigBoxW, sigBoxH);
-  y = sigY + sigBoxH + 6;
-  line('(keine Signatur)');
+  doc.setDrawColor(200);
+  doc.rect(sigX, sigY, sigBoxW, sigBoxH);   // Rahmen
+  doc.setFont('helvetica','normal');
+  doc.text('(keine Signatur)', m, sigY + 6);
 }
 
+// Platzzeiger ans Ende der Box
+y = sigY + sigBoxH + 6;
 
-      // Fotos (pro Item neue Seite)
-      items.forEach(it => {
-        const r = state.res[it.id] || {};
-        if (!r?.photos?.length) return;
-        doc.addPage(); y = m; line(`Fotos – ${it.title}`, true); y += 4;
-        r.photos.forEach(p => {
-          try {
-            const maxW = pageW - 2*m; const maxH = 60;
-            let iw = 800, ih = 600;
-            try { const props = doc.getImageProperties(p); iw = props?.width||props?.w||iw; ih = props?.height||props?.h||ih; } catch(_){}
-            let scale = Math.min(maxW/iw, maxH/ih) * 0.75; // Drossel
-            const w = Math.max(1, iw * scale); const h = Math.max(1, ih * scale);
-            if (y + h > pageH - m) { doc.addPage(); y = m; }
-            const x = m + (maxW - w) / 2;
-            doc.addImage(p, 'JPEG', x, y, w, h);
-            y += h + 6;
-          } catch (e) { line('(Foto konnte nicht eingebettet werden)', true); }
-        });
-      });
-
-      // Logo auf allen Folgeseiten wiederholen
-      try {
-        const domLogo = document.getElementById('felberLogo');
-        if (domLogo && domLogo.complete) {
-          const LOGO_W = 28, LOGO_H = 10.5, Y_LOGO = 6, X_LOGO = pageW - m - LOGO_W;
-          for (let i = 2; i <= doc.getNumberOfPages(); i++) {
-            doc.setPage(i);
-            doc.addImage(domLogo, 'PNG', X_LOGO, Y_LOGO, LOGO_W, LOGO_H);
-          }
-        }
-      } catch (e) { console.warn('Folgelogo:', e); }
-
-      // Optionaler Hook
-      if (window.patchPdf) try { window.patchPdf(doc, m, y); } catch(e){ console.warn('patchPdf:', e); }
-
-      return doc.output('blob');
-    }
-
-    function onPdf(){
-      try{
-        const blob=buildPdf();
-        const url=URL.createObjectURL(blob);
-        const a=document.createElement('a'); a.href=url; a.download='Fahrzeugkontrolle.pdf'; a.click();
-        URL.revokeObjectURL(url); setStatus('PDF gespeichert ('+(blob.size/1024/1024).toFixed(2)+' MB)');
-      }catch(err){ alert('PDF-Fehler: '+err); }
-    }
-
-    const blobToBase64 = blob => new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(blob); });
 
     async function onMail() {
       try {
