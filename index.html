@@ -591,6 +591,39 @@ function initSignature(){
   if (clr)  clr.onclick  = ()=>{ ctx.clearRect(0,0,c.width,c.height); state.sig=''; document.getElementById('sigStatus').style.display='none'; localStorage.setItem(SKEY, JSON.stringify(state)); };
   if (save) save.onclick = ()=>{ state.sig=c.toDataURL('image/png'); document.getElementById('sigStatus').style.display='inline'; localStorage.setItem(SKEY, JSON.stringify(state)); };
 }
+// --- GPS-Ortung + Reverse-Geocoding (für #btnGeo) ---
+async function onGeo(){
+  if (!navigator.geolocation) { alert('Kein GPS verfügbar.'); return; }
+
+  navigator.geolocation.getCurrentPosition(async pos => {
+    // Werte in Ihren globalen Zustand schreiben
+    state.geo = {
+      lat: +pos.coords.latitude.toFixed(6),
+      lon: +pos.coords.longitude.toFixed(6),
+      acc: Math.round(pos.coords.accuracy)
+    };
+
+    // Ausgabe unter "Fahrzeugdaten"
+    const out = document.getElementById('geoOut');
+    if (out) out.textContent = `${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`;
+
+    // Ortsname via Nominatim (best effort)
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${state.geo.lat}&lon=${state.geo.lon}&zoom=10&addressdetails=1`;
+      const r = await fetch(url, { headers: { 'Accept':'application/json' } });
+      const d = await r.json(); const a = d.address || {};
+      const place = a.city || a.town || a.village || a.municipality || a.county || '';
+      if (place) {
+        const inLoc = document.getElementById('inLoc');
+        if (inLoc) inLoc.value = place;
+        state.inLoc = place;
+        localStorage.setItem(SKEY, JSON.stringify(state));
+      }
+    } catch(_) { /* egal – Koordinaten stehen ja schon */ }
+  }, err => {
+    alert('GPS fehlgeschlagen: ' + (err?.message || err));
+  });
+}
 
 // -------- Init --------
 window.addEventListener('DOMContentLoaded', ()=>{
