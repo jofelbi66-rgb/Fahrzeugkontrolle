@@ -348,23 +348,36 @@
       });
 
       // Unterschrift
-      line();
       line('Digitale Unterschrift:', true);
-      const sigBoxW = pageW - 2*m; const sigBoxH = 40; const sigX = m; const sigY = y + 2;
-      // Weißer Hintergrund für das Signaturfeld
-      doc.setFillColor(255,255,255);
-      doc.rect(sigX, sigY, sigBoxW, sigBoxH, 'F');
-      if (state.sig) {
-        try {
-          // Signatur etwas kleiner als Box
-          const pad=3; doc.addImage(state.sig, 'JPEG', sigX+pad, sigY+pad, sigBoxW-2*pad, sigBoxH-2*pad);
-          y = sigY + sigBoxH + 6;
-        } catch (e) { line('(keine Signatur einbettbar)'); }
-      } else {
-        y = sigY + sigBoxH + 6; // Platz trotzdem reservieren
-        doc.setDrawColor(200); doc.rect(sigX, sigY, sigBoxW, sigBoxH); // dünner Rahmen
-        line('(keine Signatur)');
-      }
+
+// Koordinaten und Größe definieren
+const sigBoxW = pageW - 2 * m;   // Breite = Seitenbreite minus Ränder
+const sigBoxH = 40;              // Höhe des Felds (mm)
+const sigX = m;                  // linker Rand
+const sigY = y + 2;              // etwas Abstand zum Titel
+
+// Weißer Hintergrund (gefülltes Rechteck)
+doc.setFillColor(255, 255, 255);
+doc.rect(sigX, sigY, sigBoxW, sigBoxH, 'F');
+
+// Wenn Signatur vorhanden → einbetten
+if (state.sig) {
+  try {
+    // Signatur mit leichtem Innenabstand (Padding)
+    const pad = 3;
+    doc.addImage(state.sig, 'JPEG', sigX + pad, sigY + pad, sigBoxW - 2 * pad, sigBoxH - 2 * pad);
+    y = sigY + sigBoxH + 6;
+  } catch (e) {
+    line('(keine Signatur einbettbar)');
+  }
+} else {
+  // Keine Signatur → grauen Rahmen anzeigen
+  doc.setDrawColor(180);
+  doc.rect(sigX, sigY, sigBoxW, sigBoxH);
+  y = sigY + sigBoxH + 6;
+  line('(keine Signatur)');
+}
+
 
       // Fotos (pro Item neue Seite)
       items.forEach(it => {
