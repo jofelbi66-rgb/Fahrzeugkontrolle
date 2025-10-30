@@ -307,6 +307,55 @@ function buildPdf() {
     doc.setFont('helvetica','normal'); doc.text('(keine Signatur)', m, sigY + 6);
   }
   y = sigY + sigBoxH + 6;
+// ===== Fotos je Checkpunkt als Folgeseiten anfügen =====
+const m2 = m; // Außenrand weiterverwenden
+items.forEach(it=>{
+  const r = state.res[it.id] || {};
+  if (!r.photos || !r.photos.length) return;
+
+  doc.addPage();
+  let y2 = m2;
+
+  // Überschrift
+  doc.setFont('helvetica','bold');
+  doc.text(`Fotos – ${it.title}`, m2, y2);
+  y2 += 8;
+
+  // Jede Aufnahme in moderater Größe einfügen
+  const pageW2 = doc.internal.pageSize.getWidth();
+  const pageH2 = doc.internal.pageSize.getHeight();
+  const maxW  = pageW2 - 2*m2;
+  const maxH  = 60; // Zielhöhe je Bild ~60 mm
+
+  r.photos.forEach(p=>{
+    try{
+      // Abmessungen robust ermitteln
+      let iw = 1200, ih = 900;
+      try{
+        const props = doc.getImageProperties(p);
+        iw = props?.width  || props?.w || iw;
+        ih = props?.height || props?.h || ih;
+      }catch(_){}
+
+      // Skaliert, ohne zu groß zu werden
+      let scale = Math.min(maxW/iw, maxH/ih);
+      scale *= 0.80; // kleine Drossel für Dateigröße
+      const w = Math.max(1, iw*scale);
+      const h = Math.max(1, ih*scale);
+
+      // Seitenumbruch falls nötig
+      if (y2 + h > pageH2 - m2) { doc.addPage(); y2 = m2; }
+
+      const x2 = m2 + (maxW - w)/2;
+      doc.addImage(p, 'JPEG', x2, y2, w, h);
+      y2 += h + 6;
+    }catch(_){
+      doc.setFont('helvetica','normal');
+      doc.text('(Foto konnte nicht eingebettet werden)', m2, y2);
+      y2 += 8;
+    }
+  });
+});
 
   // Logo auf Folgeseiten
   try {
@@ -376,15 +425,35 @@ async function onMail(){
 
 // -------- Init --------
 window.addEventListener('DOMContentLoaded', ()=>{
-  // Buttons verbinden (falls nicht schon früher geschehen)
-  const bPdf  = document.getElementById('btnPdf');
-  const bMail = document.getElementById('btnMail');
-  if (bPdf)  bPdf.onclick  = onPdf;
-  if (bMail) bMail.onclick = onMail;
+  // Felder ggf. aus state laden
+  const setIf = (id,v)=>{ const el=document.getElementById(id); if(el && v) el.value=v; };
+  setIf('inCc', state.inCc); setIf('inBcc', state.inBcc);
+  setIf('inOp', state.inOp); setIf('inTr', state.inTr);
+  setIf('inTl', state.inTl); setIf('inLoc', state.inLoc);
+  if (document.getElementById('inDate') && !document.getElementById('inDate').value) {
+    const p=n=>String(n).padStart(2,'0'); const d=new Date();
+    document.getElementById('inDate').value=`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
 
-  // Signatur initialisieren
+  // Events für Persistenz
+  ['inCc','inBcc','inOp','inTr','inTl','inLoc','inDate'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.addEventListener('input', ()=>{ state[id]=el.value; localStorage.setItem(SKEY, JSON.stringify(state)); });
+  });
+
+  // Buttons verbinden
+  document.getElementById('btnPdf') ?.addEventListener('click', onPdf);
+  document.getElementById('btnMail')?.addEventListener('click', onMail);
+  document.getElementById('btnGeo') ?.addEventListener('click', onGeo);
+  document.getElementById('inLogo')?.addEventListener('change', onLogoPick);
+
+  // **WICHTIG**: Checkliste zeichnen
+  renderChecklist();
+
+  // Signatur
   initSignature();
 });
+
  })();
    
 
