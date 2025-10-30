@@ -168,16 +168,14 @@
       {id:'m1', sec:'Umweltschutz',          title:'Mobile Auffangmatten vorhanden & einsatzbereit', req:1}
     ];
 
-    // Init
-    
-// ⬇️ HIER direkt einfügen (Zeile 171)
+ <!-- === ab hier ALLES ersetzen bis zum Dateiende === -->
+
+<script>
+// -------- Signatur-Setup (MUSS vor dem DOMContentLoaded stehen) --------
 function initSignature(){
   const c = document.getElementById('sig');
   if (!c) return;
   const ctx = c.getContext('2d');
-
-  size();
-  window.addEventListener('resize', size);
 
   function size(){
     const w = c.clientWidth, h = 170, px = window.devicePixelRatio || 1;
@@ -187,171 +185,90 @@ function initSignature(){
     c.height = Math.round(h * px);
     ctx.setTransform(px,0,0,px,0,0);
     ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
+    ctx.lineCap   = 'round';
     ctx.strokeStyle = '#111827';
   }
+  size();
+  window.addEventListener('resize', size);
 
-  let down = false, last = null;
-  const P = e => {
-    const r = c.getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
-  };
-
-  c.addEventListener('pointerdown', e => { down = true; last = P(e); });
-  c.addEventListener('pointerup',   () => { down = false; last = null; });
-  c.addEventListener('pointerleave',() => { down = false; last = null; });
-  c.addEventListener('pointermove', e => {
-    if (!down) return;
-    const p = P(e);
-    ctx.beginPath();
-    ctx.moveTo(last.x, last.y);
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
-    last = p;
+  let down=false,last=null;
+  const P=e=>{const r=c.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}};
+  c.addEventListener('pointerdown',e=>{down=true;last=P(e);});
+  c.addEventListener('pointerup',  ()=>{down=false;last=null;});
+  c.addEventListener('pointerleave',()=>{down=false;last=null;});
+  c.addEventListener('pointermove',e=>{
+    if(!down) return;
+    const p=P(e);
+    ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(p.x,p.y); ctx.stroke();
+    last=p;
   });
 
-  // Buttons
-  const save = document.getElementById('btnSaveSig');
-  const clr  = document.getElementById('btnClearSig');
-  if (clr)  clr.onclick  = () => { ctx.clearRect(0,0,c.width,c.height); state.sig=''; document.getElementById('sigStatus').style.display='none'; persist(); };
-  if (save) save.onclick = () => {
-    state.sig = c.toDataURL('image/png');
-    document.getElementById('sigStatus').style.display='inline';
-    persist();
-  };
+  const save=document.getElementById('btnSaveSig');
+  const clr =document.getElementById('btnClearSig');
+  if (clr)  clr.onclick  = ()=>{ ctx.clearRect(0,0,c.width,c.height); state.sig=''; document.getElementById('sigStatus').style.display='none'; persist(); };
+  if (save) save.onclick = ()=>{ state.sig=c.toDataURL('image/png'); document.getElementById('sigStatus').style.display='inline'; persist(); };
 }
 
-// ⬇️ Diese Zeile bleibt wie sie ist
-window.addEventListener('DOMContentLoaded', ()=>{
+// -------- PDF bauen (Zebra-Tabelle + großes weißes Signaturfeld) --------
+function buildPdf() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'mm', format:'a4', compress:true });
 
-    window.addEventListener('DOMContentLoaded', ()=>{
-      ['inCc','inBcc','inOp','inTr','inTl','inLoc'].forEach(id=>{ if(state[id]) $('#'+id).value=state[id]; });
-      $('#inDate').value = localDateTimeValue();
-      ['inCc','inBcc','inOp','inTr','inTl','inLoc','inDate'].forEach(id=>$('#'+id).addEventListener('input', persist));
-      if(state.logo) $('#logoInfo').textContent='Logo gespeichert';
-      renderChecklist(); initSignature();
-      $('#btnGeo').onclick=onGeo; $('#btnPdf').onclick=onPdf; $('#btnMail').onclick=onMail; $('#inLogo').onchange=onLogoPick;
-    });
+  const m = 14;
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  let y = m;
 
-    function persist(){ ['inCc','inBcc','inOp','inTr','inTl','inLoc','inDate'].forEach(id=>state[id]=$('#'+id).value); localStorage.setItem(SKEY, JSON.stringify(state)); }
-    function setStatus(t){ const el=$('#status'); if(el) el.textContent=t; }
-    function localDateTimeValue(d=new Date()){ const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; }
-
-    async function onGeo(){
-      if(!navigator.geolocation){ alert('Kein GPS verfügbar.'); return; }
-      navigator.geolocation.getCurrentPosition(async pos=>{
-        state.geo={lat:+pos.coords.latitude.toFixed(6), lon:+pos.coords.longitude.toFixed(6), acc:Math.round(pos.coords.accuracy)};
-        $('#geoOut').textContent=`${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`;
-        try{
-          const url=`https://nominatim.openstreetmap.org/reverse?format=json&lat=${state.geo.lat}&lon=${state.geo.lon}&zoom=10&addressdetails=1`;
-          const r=await fetch(url,{headers:{'Accept':'application/json'}});
-          const d=await r.json(); const a=d.address||{};
-          const place=a.city||a.town||a.village||a.municipality||a.county||'';
-          if(place) { $('#inLoc').value=place; persist(); }
-        }catch(_){}
-      }, err=> alert('GPS fehlgeschlagen: '+(err?.message||err)));
+  // Logo Seite 1
+  try {
+    const domLogo = document.getElementById('felberLogo');
+    if (domLogo && domLogo.complete) {
+      const LOGO_W=32, LOGO_H=12, Y_LOGO=6, X_LOGO=pageW - m - LOGO_W;
+      doc.addImage(domLogo,'PNG',X_LOGO,Y_LOGO,LOGO_W,LOGO_H);
+      y = Math.max(y, Y_LOGO + LOGO_H + 8);
     }
+  } catch(_) {}
 
-    async function onLogoPick(e){
-      const f=e.target.files && e.target.files[0]; if(!f) return;
-      const data = await compressImageFile(f, 320, 0.8);
-      const info = await probeImage(data);
-      state.logo=data; state.logoAspect=info.w/info.h||1; $('#logoInfo').textContent=`Logo gespeichert (${info.w}×${info.h})`; persist();
-    }
-    function probeImage(dataUrl){ return new Promise(res=>{ const i=new Image(); i.onload=()=>res({w:i.width,h:i.height}); i.src=dataUrl; }); }
+  const line=(txt,bold=false)=>{ doc.setFont('helvetica', bold?'bold':'normal'); doc.text(String(txt||''), m, y); y+=6; };
 
-    function renderChecklist(){
-      const host=$('#checklist'); host.innerHTML='';
-      const groups=[...new Set(items.map(i=>i.sec))];
-      groups.forEach(sec=>{
-        host.insertAdjacentHTML('beforeend', `<div style="font-weight:700;margin:6px 0">${sec}</div>`);
-        items.filter(i=>i.sec===sec).forEach(it=>{
-          const card=document.createElement('div'); card.className='card';
-          card.innerHTML=`
-            <div class="row" style="justify-content:space-between">
-              <div class="row" style="gap:8px"><div style="font-weight:600">${it.title}</div>${it.req?'<span class="chip">Pflicht</span>':''}</div>
-              <div class="row"><button class="btn" data-sev="OK">OK</button><button class="btn" data-sev="Hinweis">Hinweis</button><button class="btn" data-sev="Mangel">Mangel</button></div>
-            </div>
-            <textarea placeholder="Bemerkung / Maßnahmen…"></textarea>
-            <label style="display:block;margin-top:6px"><span style="font-size:14px;font-weight:600">Foto hinzufügen</span>
-              <input type="file" accept="image/*" capture="environment" style="display:block;margin-top:6px"></label>
-            <div class="photos" id="ph_${it.id}"></div>
-          `;
-          host.appendChild(card);
-          if(!state.res[it.id]) state.res[it.id]={sev:'',note:'',photos:[]};
+  // Kopf
+  line('Fahrzeugkontrolle – Schwerlast/Zugmaschine', true);
+  line(`Datum/Uhrzeit: ${document.getElementById('inDate')?.value || ''}`);
+  line(`Fahrer/in: ${document.getElementById('inOp')?.value || ''}`);
+  line(`Zugmaschine: ${document.getElementById('inTr')?.value || ''} | Auflieger/Modul: ${document.getElementById('inTl')?.value || ''}`);
+  const locVal = document.getElementById('inLoc')?.value || '';
+  if (locVal) line(`Ort: ${locVal}`);
+  if (state.geo) line(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
+  y += 2;
 
-          const btns=card.querySelectorAll('button[data-sev]');
-          const mark=v=>{ btns.forEach(b=>b.className='btn'); btns.forEach(b=>{ if(b.dataset.sev===v){ b.className+=' '+(v==='OK'?'ok':v==='Hinweis'?'warn':'bad')+' active'; } }); };
-          if(state.res[it.id].sev) mark(state.res[it.id].sev);
-          btns.forEach(b=> b.onclick=()=>{ state.res[it.id].sev=b.dataset.sev; mark(b.dataset.sev); persist(); });
+  // Tabelle
+  const colW = { status:28, foto:32, text: pageW - 2*m - 28 - 32 };
+  const x    = { status:m,  text: m + 28, foto: pageW - m - colW.foto };
 
-          const ta=card.querySelector('textarea'); ta.value=state.res[it.id].note||''; ta.oninput=()=>{ state.res[it.id].note=ta.value; persist(); };
+  doc.setDrawColor(200); doc.setFillColor(245,245,245);
+  doc.rect(m, y, pageW - 2*m, 8, 'F');
+  doc.setFont('helvetica','bold');
+  doc.text('Status',     x.status + 2, y + 5);
+  doc.text('Checkpunkt', x.text   + 2, y + 5);
+  doc.text('Foto',       x.foto   + 2, y + 5);
+  y += 10;
 
-          const fi=card.querySelector('input[type=file]'); fi.onchange=async e=>{
-            const f=e.target.files && e.target.files[0]; if(!f) return;
-            const url=await compressImageFile(f, 700, 0.42);
-            state.res[it.id].photos.push(url); redrawPhotos(it.id); persist(); fi.value='';
-          };
-          redrawPhotos(it.id);
-        });
-      });
-    }
-    function redrawPhotos(id){
-      const bar=$('#ph_'+id); if(!bar) return; bar.innerHTML='';
-      (state.res[id].photos||[]).forEach((p,idx)=>{
-        const d=document.createElement('div'); d.className='ph';
-        d.innerHTML=`<img src="${p}"><button class="x" title="Entfernen">×</button>`;
-        d.querySelector('.x').onclick=()=>{ state.res[id].photos.splice(idx,1); persist(); redrawPhotos(id); };
-        bar.appendChild(d);
-      });
-    }
+  const rowHmin=8, zebraA=[255,255,255], zebraB=[248,250,252];
+  let rowIndex=0;
 
-    function compressImageFile(file,maxDim=700,quality=0.42){
-      return new Promise((resolve,reject)=>{
-        const r=new FileReader();
-        r.onload=()=>{ const img=new Image(); img.onload=()=>{
-          const c=document.createElement('canvas'); let w=img.width,h=img.height; const s=Math.min(1,maxDim/Math.max(w,h));
-          w=Math.round(w*s); h=Math.round(h*s); c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h);
-          resolve(c.toDataURL('image/jpeg',quality));
-        }; img.src=r.result; };
-        r.onerror=reject; r.readAsDataURL(file);
-      });
-    }
+  items.forEach(it=>{
+    const r = state.res[it.id] || {};
+    const sev = r.sev || '-';
+    const txt = it.title + (r.note ? ('\nNotiz: ' + r.note) : '');
+    const fotos = (r.photos && r.photos.length) ? `ja (${r.photos.length})` : '–';
 
-        // ===== PDF bauen (Zebra-Tabelle + großes weißes Signaturfeld) =====
-    function buildPdf() {
-      const doc = new jsPDF({ unit:'mm', format:'a4', compress:true });
-      const m = 14;
-      const pageW = doc.internal.pageSize.getWidth();
-      const pageH = doc.internal.pageSize.getHeight();
-      let y = m;
+    doc.setFont('helvetica','normal');
+    const wrapped = doc.splitTextToSize(txt, colW.text - 4);
+    const rowH = Math.max(rowHmin, 5 + wrapped.length*4);
 
-      // Logo Seite 1
-      try {
-        const domLogo = document.getElementById('felberLogo');
-        if (domLogo && domLogo.complete) {
-          const LOGO_W=32, LOGO_H=12, Y_LOGO=6, X_LOGO=pageW - m - LOGO_W;
-          doc.addImage(domLogo,'PNG',X_LOGO,Y_LOGO,LOGO_W,LOGO_H);
-          y = Math.max(y, Y_LOGO + LOGO_H + 8);
-        }
-      } catch(_) {}
-
-      const line=(txt,bold=false)=>{ doc.setFont('helvetica', bold?'bold':'normal'); doc.text(String(txt||''), m, y); y+=6; };
-
-      // Kopf
-      line('Fahrzeugkontrolle – Schwerlast/Zugmaschine', true);
-      line(`Datum/Uhrzeit: ${$('#inDate').value || ''}`);
-      line(`Fahrer/in: ${$('#inOp').value || ''}`);
-      line(`Zugmaschine: ${$('#inTr').value || ''} | Auflieger/Modul: ${$('#inTl').value || ''}`);
-      if ($('#inLoc').value) line(`Ort: ${$('#inLoc').value}`);
-      if (state.geo) line(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
-      y += 2;
-
-      // ===== ZEBRA-TABELLE: Status | Checkpunkt | Foto =====
-      const colW = { status:28, foto:32, text: pageW - 2*m - 28 - 32 };
-      const x    = { status:m,  text: m + 28, foto: pageW - m - colW.foto };
-
-      // Tabellenkopf
+    // Platz für Unterschrift lassen
+    if (y + rowH > pageH - m - 70) {
+      doc.addPage(); y = m;
       doc.setDrawColor(200); doc.setFillColor(245,245,245);
       doc.rect(m, y, pageW - 2*m, 8, 'F');
       doc.setFont('helvetica','bold');
@@ -359,137 +276,124 @@ window.addEventListener('DOMContentLoaded', ()=>{
       doc.text('Checkpunkt', x.text   + 2, y + 5);
       doc.text('Foto',       x.foto   + 2, y + 5);
       y += 10;
-
-      const rowHmin=8; const zebraA=[255,255,255]; const zebraB=[248,250,252]; let rowIndex=0;
-
-      items.forEach(it=>{
-        const r = state.res[it.id] || {};
-        const sev = r.sev || '-';
-        const txt = it.title + (r.note ? ('\nNotiz: ' + r.note) : '');
-        const fotos = (r.photos && r.photos.length) ? `ja (${r.photos.length})` : '–';
-
-        doc.setFont('helvetica','normal');
-        const wrapped = doc.splitTextToSize(txt, colW.text - 4);
-        const rowH = Math.max(rowHmin, 5 + wrapped.length*4);
-
-        // Platz für Unterschrift (55 mm + Luft)
-        if (y + rowH > pageH - m - 70) {
-          doc.addPage(); y = m;
-          doc.setDrawColor(200); doc.setFillColor(245,245,245);
-          doc.rect(m, y, pageW - 2*m, 8, 'F');
-          doc.setFont('helvetica','bold');
-          doc.text('Status',     x.status + 2, y + 5);
-          doc.text('Checkpunkt', x.text   + 2, y + 5);
-          doc.text('Foto',       x.foto   + 2, y + 5);
-          y += 10;
-        }
-
-        const bg = (rowIndex++ % 2 === 0) ? zebraA : zebraB;
-        doc.setFillColor(bg[0],bg[1],bg[2]); doc.rect(m, y-1, pageW-2*m, rowH, 'F');
-
-        doc.text(`[${sev}]`, x.status+2, y+5);
-        doc.text(wrapped,     x.text  +2, y+5);
-        doc.text(fotos,       x.foto  +2, y+5);
-
-        doc.setDrawColor(230); doc.line(m, y-1+rowH, pageW-m, y-1+rowH);
-        y += rowH + 2;
-      });
-
-      // ===== Digitale Unterschrift: groß, weiß =====
-      y += 4;
-      doc.setFont('helvetica','bold'); doc.text('Digitale Unterschrift:', m, y); y += 4;
-
-      const sigBoxW = pageW - 2*m, sigBoxH = 55, sigX = m, sigY = y + 2;
-      doc.setFillColor(255,255,255); doc.rect(sigX, sigY, sigBoxW, sigBoxH, 'F');
-
-      if (state.sig) {
-        try {
-          const pad=3; const fmt = state.sig.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-          doc.addImage(state.sig, fmt, sigX+pad, sigY+pad, sigBoxW-2*pad, sigBoxH-2*pad);
-        } catch {
-          doc.setFont('helvetica','normal'); doc.text('(keine Signatur einbettbar)', m, sigY + 6);
-        }
-      } else {
-        doc.setDrawColor(200); doc.rect(sigX, sigY, sigBoxW, sigBoxH);
-        doc.setFont('helvetica','normal'); doc.text('(keine Signatur)', m, sigY + 6);
-      }
-      y = sigY + sigBoxH + 6;
-
-      // Logo auf Folgeseiten
-      try {
-        const domLogo = document.getElementById('felberLogo');
-        if (domLogo && domLogo.complete) {
-          const LOGO_W=28, LOGO_H=10.5, Y_LOGO=6, X_LOGO=pageW - m - LOGO_W;
-          for(let i=2;i<=doc.getNumberOfPages();i++){ doc.setPage(i); doc.addImage(domLogo,'PNG',X_LOGO,Y_LOGO,LOGO_W,LOGO_H); }
-        }
-      } catch(_) {}
-
-      return doc.output('blob');
     }
 
-    // PDF speichern
-    function onPdf(){
-      try{
-        const blob=buildPdf();
-        const url=URL.createObjectURL(blob);
-        const a=document.createElement('a'); a.href=url; a.download='Fahrzeugkontrolle.pdf'; a.click();
-        URL.revokeObjectURL(url);
-        setStatus('PDF gespeichert ('+(blob.size/1024/1024).toFixed(2)+' MB)');
-      }catch(err){ alert('PDF-Fehler: '+(err?.message||err)); }
+    const bg = (rowIndex++ % 2 === 0) ? zebraA : zebraB;
+    doc.setFillColor(bg[0],bg[1],bg[2]); doc.rect(m, y-1, pageW-2*m, rowH, 'F');
+
+    doc.text(`[${sev}]`, x.status+2, y+5);
+    doc.text(wrapped,     x.text  +2, y+5);
+    doc.text(fotos,       x.foto  +2, y+5);
+
+    doc.setDrawColor(230); doc.line(m, y-1+rowH, pageW-m, y-1+rowH);
+    y += rowH + 2;
+  });
+
+  // Unterschrift
+  y += 4;
+  doc.setFont('helvetica','bold'); doc.text('Digitale Unterschrift:', m, y); y += 4;
+
+  const sigBoxW = pageW - 2*m, sigBoxH = 55, sigX = m, sigY = y + 2;
+  doc.setFillColor(255,255,255); doc.rect(sigX, sigY, sigBoxW, sigBoxH, 'F');
+
+  if (state.sig) {
+    try {
+      const pad=3; const fmt = state.sig.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+      doc.addImage(state.sig, fmt, sigX+pad, sigY+pad, sigBoxW-2*pad, sigBoxH-2*pad);
+    } catch {
+      doc.setFont('helvetica','normal'); doc.text('(keine Signatur einbettbar)', m, sigY + 6);
     }
+  } else {
+    doc.setDrawColor(200); doc.rect(sigX, sigY, sigBoxW, sigBoxH);
+    doc.setFont('helvetica','normal'); doc.text('(keine Signatur)', m, sigY + 6);
+  }
+  y = sigY + sigBoxH + 6;
 
-    const blobToBase64 = blob => new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(blob); });
-
-    // Mailversand (feste Dispo, CORS-safe)
-    async function onMail(){
-      try{
-        const RELAY_URL='https://script.google.com/macros/s/AKfycbwNt85E1m00CkLoL2U5wI8hCK5C2Zu0SzMb4x__sw7nXkGtk1nwXnYvXsRyv8CUDlsC/exec';
-        setStatus('Erzeuge PDF …');
-        const pdfBlob=buildPdf();
-        const base64=await blobToBase64(pdfBlob);
-
-        const dt = $('#inDate')?.value || '';
-        const tr = $('#inTr')?.value || 'Zug';
-        const tl = $('#inTl')?.value || 'Aufl';
-        const subject=`Fahrzeugkontrolle ${tr} / ${tl}`;
-        const filename=`Fahrzeugkontrolle_${tr}_${tl}_${dt}.pdf`.replace(/\s+/g,' ').replace(/[^\wäöüÄÖÜß ._-]/g,'');
-
-        const payload={
-          to:'Dispo-Memmingen@felbermayr.cc',
-          cc: ($('#inCc')?.value||'').trim(),
-          bcc: ($('#inBcc')?.value||'').trim(),
-          subject,
-          text:'Fahrzeugkontrolle – Schwerlast/Zugmaschine',
-          html:'<div>Fahrzeugkontrolle – Schwerlast/Zugmaschine</div>',
-          filename,
-          pdfBase64: base64
-        };
-
-        setStatus('Sende über Relay …');
-        await fetch(RELAY_URL, {
-          method:'POST',
-          mode:'no-cors', // kein Preflight
-          headers:{ 'Content-Type':'text/plain;charset=utf-8' },
-          body: JSON.stringify(payload)
-        });
-
-        setStatus('Bericht gesendet ✓');
-        alert('E-Mail mit PDF-Anhang wurde gesendet.');
-      }catch(err){
-        console.error('[onMail] Fehler:', err);
-        setStatus('Senden fehlgeschlagen');
-        alert('Fehler beim Versand: ' + (err?.message || err));
-      }
+  // Logo auf Folgeseiten
+  try {
+    const domLogo = document.getElementById('felberLogo');
+    if (domLogo && domLogo.complete) {
+      const LOGO_W=28, LOGO_H=10.5, Y_LOGO=6, X_LOGO=pageW - m - LOGO_W;
+      for(let i=2;i<=doc.getNumberOfPages();i++){ doc.setPage(i); doc.addImage(domLogo,'PNG',X_LOGO,Y_LOGO,LOGO_W,LOGO_H); }
     }
+  } catch(_) {}
 
-  })();
-  </script>
+  return doc.output('blob');
+}
 
-  <!-- Optionaler PDF-Hook (leer) -->
-  <script>
-    window.patchPdf = function (doc, m, y) {
-      try { /* reserviert */ } catch (e) { console.warn('patchPdf warn:', e); }
+// -------- Utilities --------
+const blobToBase64 = blob => new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(blob); });
+
+// -------- Aktionen --------
+function onPdf(){
+  try{
+    const blob=buildPdf();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download='Fahrzeugkontrolle.pdf'; a.click();
+    URL.revokeObjectURL(url);
+    const s=document.getElementById('status'); if(s) s.textContent='PDF gespeichert ('+(blob.size/1024/1024).toFixed(2)+' MB)';
+  }catch(err){ alert('PDF-Fehler: '+(err?.message||err)); }
+}
+
+async function onMail(){
+  try{
+    const RELAY_URL='https://script.google.com/macros/s/AKfycbwNt85E1m00CkLoL2U5wI8hCK5C2Zu0SzMb4x__sw7nXkGtk1nwXnYvXsRyv8CUDlsC/exec';
+    const s=document.getElementById('status'); if(s) s.textContent='Erzeuge PDF …';
+    const pdfBlob=buildPdf();
+    const base64=await blobToBase64(pdfBlob);
+
+    const dt=document.getElementById('inDate')?.value || '';
+    const tr=document.getElementById('inTr')?.value || 'Zug';
+    const tl=document.getElementById('inTl')?.value || 'Aufl';
+    const subject=`Fahrzeugkontrolle ${tr} / ${tl}`;
+    const filename=`Fahrzeugkontrolle_${tr}_${tl}_${dt}.pdf`.replace(/\s+/g,' ').replace(/[^\wäöüÄÖÜß ._-]/g,'');
+
+    const payload={
+      to:'Dispo-Memmingen@felbermayr.cc',
+      cc:(document.getElementById('inCc')?.value||'').trim(),
+      bcc:(document.getElementById('inBcc')?.value||'').trim(),
+      subject,
+      text:'Fahrzeugkontrolle – Schwerlast/Zugmaschine',
+      html:'<div>Fahrzeugkontrolle – Schwerlast/Zugmaschine</div>',
+      filename,
+      pdfBase64: base64
     };
-  </script>
+
+    if(s) s.textContent='Sende über Relay …';
+    await fetch(RELAY_URL, {
+      method:'POST',
+      mode:'no-cors',
+      headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+
+    if(s) s.textContent='Bericht gesendet ✓';
+    alert('E-Mail mit PDF-Anhang wurde gesendet.');
+  }catch(err){
+    const s=document.getElementById('status'); if(s) s.textContent='Senden fehlgeschlagen';
+    alert('Fehler beim Versand: ' + (err?.message || err));
+  }
+}
+
+// -------- Init --------
+window.addEventListener('DOMContentLoaded', ()=>{
+  // Buttons verbinden (falls nicht schon früher geschehen)
+  const bPdf  = document.getElementById('btnPdf');
+  const bMail = document.getElementById('btnMail');
+  if (bPdf)  bPdf.onclick  = onPdf;
+  if (bMail) bMail.onclick = onMail;
+
+  // Signatur initialisieren
+  initSignature();
+});
+</script>
+
+<!-- Optionaler PDF-Hook (leer) -->
+<script>
+  window.patchPdf = function (doc, m, y) {
+    try { /* reserviert */ } catch (e) { console.warn('patchPdf warn:', e); }
+  };
+</script>
+
 </body>
 </html>
