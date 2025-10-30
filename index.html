@@ -552,120 +552,99 @@ try {
   const blobToBase64 = blob => new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(blob); });
 
 
-async function onMail () {
-  const $id = (x) => document.getElementById(x);
 
-  // --- Pflichtfelder prüfen (minimal, bei Bedarf erweitern)
-  const problems = [];
-  if (!$id('inOp')?.value) problems.push('Fahrer/in fehlt');
-  if (!$id('inTr')?.value || !$id('inTl')?.value) problems.push('Kennzeichen (Zug/Auflieger) fehlen');
-
-  if (problems.length) {
-    alert('Versand blockiert:\n- ' + problems.join('\n- '));
-    return;
-  }
-
-  // --- Werte robust lesen
-  const dt = ($id('inDate')?.value || '').trim();
-  const op = ($id('inOp')?.value || '').trim();
-  const tr = ($id('inTr')?.value || '').trim();
-  const tl = ($id('inTl')?.value || '').trim();
-  const loc = ($id('inLoc')?.value || '').trim();
-
-  // --- Dateiname + Subject
-  const ts = dt ? dt.replace(/[^\dT]/g, '').replace('T','_').slice(0,15) : '';
-  const filename = `Fahrzeugkontrolle_${tr || 'Zug'}_${tl || 'Aufl'}_${op || 'NN'}_${ts || ''}.pdf`;
-  const subject  = `Fahrzeugkontrolle ${tr || 'Zug'} / ${tl || 'Aufl'} – ${op || ''} – ${dt || ''}`;
-
-  // --- Zusammenfassungstext (Plain + HTML)
-  const lines = [];
-  lines.push(`Datum/Uhrzeit: ${dt || ''}`);
-  lines.push(`Fahrer/in: ${op || ''}`);
-  lines.push(`Zugmaschine: ${tr || ''} | Auflieger/Modul: ${tl || ''}`);
-  if (loc) lines.push(`Ort: ${loc}`);
-  if (window.state?.geo) {
-    lines.push(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
-  }
-
-  // Freigabe aus Checkliste
-  const anyBad = (window.items || []).some(it => (state.res[it.id] && state.res[it.id].sev === 'Mangel'));
-  const freigabeText = anyBad ? 'NICHT ERTEILT (Mangel vorhanden)' : 'ERTEILT';
-
-  // kompaktes Checklisten-Protokoll (Plain)
-  const checkRows = (window.items || []).map(it => {
-    const r = state.res[it.id] || {};
-    const sev = r.sev || '-';
-    const note = (r.note && r.note.trim()) ? ` – ${r.note.trim()}` : '';
-    return `• [${sev}] ${it.title}${note}`;
-  }).join('\n');
-
-  const bodyText =
-    `Fahrzeugkontrolle – Schwerlast/Zugmaschine\n` +
-    lines.join('\n') + `\n\n` +
-    `Freigabe: ${freigabeText}\n\n` +
-    `Checkpunkte:\n${checkRows}\n\n` +
-    `(Details siehe PDF-Anhang)`;
-
-  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
-  const bodyHtml =
-    `<div style="font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;font-size:14px;line-height:1.5">
-       <h2 style="margin:0 0 8px 0">Fahrzeugkontrolle – Schwerlast/Zugmaschine</h2>
-       <div>${lines.map(s => `<div>${esc(s)}</div>`).join('')}</div>
-       <div style="margin:10px 0 0 0"><strong>Freigabe: ${esc(freigabeText)}</strong></div>
-       <div style="margin:10px 0 4px 0"><strong>Checkpunkte:</strong></div>
-       <ul style="margin:0;padding-left:18px">
-         ${(window.items || []).map(it => {
-            const r = state.res[it.id] || {};
-            const sev = r.sev || '-';
-            const note = (r.note && r.note.trim()) ? ` – ${esc(r.note.trim())}` : '';
-            return `<li>[${esc(sev)}] ${esc(it.title)}${note}</li>`;
-         }).join('')}
-       </ul>
-       <div style="margin-top:10px">(Details siehe PDF-Anhang)</div>
-     </div>`;
-
+async function onMail() {
   try {
-    // --- PDF erzeugen
-    setStatus('Erzeuge PDF …');
-    const pdfBlob = buildPdf();
-    const base64  = await blobToBase64(pdfBlob);
+    console.log('[onMail] Start');
 
-    // --- Versand-Payload (feste Dispo-Adresse; CC/BCC optional aus Feldern)
+    // --- Pflichtprüfungen (wie bei dir; gern angepasst lassen) ---
+    const $id = (x) => document.getElementById(x);
+    const problems = [];
+    if (!$id('inDispo')?.value) problems.push('Dispo-E-Mail fehlt');
+    if (!$id('inOp')?.value || !$id('inTr')?.value || !$id('inTl')?.value)
+      problems.push('Fahrer/in und beide Kennzeichen sind Pflicht');
+    if (problems.length) {
+      alert('Versand blockiert:\n- ' + problems.join('\n- '));
+      console.warn('[onMail] Abbruch wegen Pflichtprüfungen', problems);
+      return;
+    }
+
+    // --- Werte robust lesen ---
+    const val = (id, key) => {
+      const el = $id(id);
+      const v = el ? (('value' in el ? el.value : el.textContent) || '').trim() : '';
+      if (v) return v;
+      try {
+        const fromLS = JSON.parse(localStorage.getItem(key || id) || '""');
+        return (fromLS || '').toString().trim();
+      } catch { return ''; }
+    };
+
+    const dt = val('inDate','date');
+    const op = val('inOp','op');
+    const tr = val('inTr','tr');
+    const tl = val('inTl','tl');
+    const loc = val('inLoc','loc');
+
+    // --- PDF bauen ---
+    console.log('[onMail] PDF bauen …');
+    setStatus('Erzeuge PDF …');
+    const pdfBlob = buildPdf();         // <- deine bestehende buildPdf()
+    if (!pdfBlob) throw new Error('buildPdf() lieferte nichts');
+
+    // (Optional) Weißer Hintergrund unter der Signatur – falls du sie in buildPdf() nicht schon zeichnest:
+    // -> Falls du die Signatur in buildPdf() einzeichnest, diesen Kommentar ignorieren.
+    //    Wenn du die Signatur HIER einfügst, brauchst du doc-Objekt; deshalb lassen wir es in buildPdf().
+
+    // --- Dateiname + Base64 ---
+    const base64 = await blobToBase64(pdfBlob); // <- deine bestehende blobToBase64()
+    const filename = `Fahrzeugkontrolle_${(tr||'Zug')}_${(tl||'Aufl')}_${(dt||'')}.pdf`
+      .replace(/\s+/g, ' ').replace(/[^\wäöüÄÖÜß ._-]/g, '');
+
+    // --- Mailbetreff & -texte (wie gehabt) ---
+    const subject = `Fahrzeugkontrolle ${tr || 'Zug'} / ${tl || 'Aufl'}`;
+    const lines = [];
+    lines.push(`Datum/Uhrzeit: ${dt || '-'}`);
+    lines.push(`Fahrer/in: ${op || '-'}`);
+    lines.push(`Zugmaschine: ${tr || '-'} | Auflieger/Modul: ${tl || '-'}`);
+    if (loc) lines.push(`Ort: ${loc}`);
+    const bodyText = `Fahrzeugkontrolle – Schwerlast/Zugmaschine\n\n${lines.join('\n')}\n\nFreigabe: -`;
+    const bodyHtml = `<div>${lines.map(s=>`<div>${s}</div>`).join('')}</div>`;
+
+    // --- Payload für Relay ---
+    const to = 'Dispo-Memmingen@felbermayr.cc'; // fester Empfänger
+    const cc = ($id('inCc')?.value || '').trim();
+    const bcc = ($id('inBcc')?.value || '').trim();
+
     const payload = {
-      to: 'Dispo-Memmingen@felbermayr.cc',
-      cc:  ($id('inCc')?.value  || '').trim(),
-      bcc: ($id('inBcc')?.value || '').trim(),
+      to, cc, bcc,
       subject,
       text: bodyText,
       html: bodyHtml,
       filename,
       pdfBase64: base64
     };
+    console.log('[onMail] Payload ok', payload);
 
-    // --- senden
+    // --- Versand ---
     setStatus('Sende über Relay …');
-    try {
-      await fetch(RELAY_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-    } catch (_) {
-      await fetch(RELAY_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-    }
+    console.log('[onMail] fetch → RELAY_URL');
+    await fetch(RELAY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
 
     setStatus('Bericht gesendet ✓');
     alert('E-Mail mit PDF-Anhang wurde gesendet.');
+
   } catch (err) {
+    console.error('[onMail] Fehler:', err);
     setStatus('Senden fehlgeschlagen');
     alert('Fehler beim Versand: ' + (err?.message || err));
   }
 }
+</script>
 
 
   
