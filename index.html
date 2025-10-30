@@ -422,37 +422,148 @@ async function onMail(){
     alert('Fehler beim Versand: ' + (err?.message || err));
   }
 }
+// === CHECKLISTE + HILFSFUNKTIONEN ===
+function renderChecklist(){
+  const host = document.getElementById('checklist');
+  if (!host) return;
+  host.innerHTML = '';
+
+  const groups = [...new Set(items.map(i => i.sec))];
+  groups.forEach(sec=>{
+    host.insertAdjacentHTML('beforeend', `<div style="font-weight:700;margin:6px 0">${sec}</div>`);
+    items.filter(i=>i.sec===sec).forEach(it=>{
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="row" style="justify-content:space-between">
+          <div class="row" style="gap:8px">
+            <div style="font-weight:600">${it.title}</div>${it.req?'<span class="chip">Pflicht</span>':''}
+          </div>
+          <div class="row">
+            <button class="btn" data-sev="OK">OK</button>
+            <button class="btn" data-sev="Hinweis">Hinweis</button>
+            <button class="btn" data-sev="Mangel">Mangel</button>
+          </div>
+        </div>
+        <textarea placeholder="Bemerkung / Maßnahmen…"></textarea>
+        <label style="display:block;margin-top:6px">
+          <span style="font-size:14px;font-weight:600">Foto hinzufügen</span>
+          <input type="file" accept="image/*" capture="environment" style="display:block;margin-top:6px">
+        </label>
+        <div class="photos" id="ph_${it.id}"></div>
+      `;
+      host.appendChild(card);
+
+      if (!state.res[it.id]) state.res[it.id] = { sev:'', note:'', photos:[] };
+
+      // Status-Buttons
+      const btns = card.querySelectorAll('button[data-sev]');
+      const mark = v=>{
+        btns.forEach(b=>b.className='btn');
+        btns.forEach(b=>{
+          if (b.dataset.sev===v) b.className += ' ' + (v==='OK'?'ok':v==='Hinweis'?'warn':'bad') + ' active';
+        });
+      };
+      if (state.res[it.id].sev) mark(state.res[it.id].sev);
+      btns.forEach(b=>{
+        b.onclick = ()=>{ state.res[it.id].sev=b.dataset.sev; mark(b.dataset.sev); localStorage.setItem(SKEY, JSON.stringify(state)); };
+      });
+
+      // Notiz
+      const ta = card.querySelector('textarea');
+      ta.value = state.res[it.id].note||'';
+      ta.oninput = ()=>{ state.res[it.id].note = ta.value; localStorage.setItem(SKEY, JSON.stringify(state)); };
+
+      // Foto
+      const fi = card.querySelector('input[type=file]');
+      fi.onchange = async e=>{
+        const f = e.target.files && e.target.files[0]; if(!f) return;
+        const url = await compressImageFile(f, 700, 0.42);
+        state.res[it.id].photos.push(url);
+        redrawPhotos(it.id);
+        localStorage.setItem(SKEY, JSON.stringify(state));
+        fi.value = '';
+      };
+
+      redrawPhotos(it.id);
+    });
+  });
+}
+
+function redrawPhotos(id){
+  const bar = document.getElementById('ph_'+id);
+  if (!bar) return;
+  bar.innerHTML = '';
+  (state.res[id].photos||[]).forEach((p,idx)=>{
+    const d = document.createElement('div'); d.className='ph';
+    d.innerHTML = `<img src="${p}"><button class="x" title="Entfernen">×</button>`;
+    d.querySelector('.x').onclick = ()=>{
+      state.res[id].photos.splice(idx,1);
+      localStorage.setItem(SKEY, JSON.stringify(state));
+      redrawPhotos(id);
+    };
+    bar.appendChild(d);
+  });
+}
+
+// Bilder komprimieren
+function compressImageFile(file,maxDim=700,quality=0.42){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>{ const img=new Image(); img.onload=()=>{
+      const c=document.createElement('canvas');
+      let w=img.width,h=img.height; const s=Math.min(1,maxDim/Math.max(w,h));
+      w=Math.round(w*s); h=Math.round(h*s); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      resolve(c.toDataURL('image/jpeg',quality));
+    }; img.src=r.result; }; r.onerror=reject; r.readAsDataURL(file);
+  });
+}
+function probeImage(dataUrl){ return new Promise(res=>{ const i=new Image(); i.onload=()=>res({w:i.width,h:i.height}); i.src=dataUrl; }); }
+
+// === SIGNATUR ===
+function initSignature(){
+  const c = document.getElementById('sig');
+  if (!c) return;
+  const ctx = c.getContext('2d');
+
+  function size(){
+    const w=c.clientWidth,h=170,px=window.devicePixelRatio||1;
+    c.style.width=w+'px'; c.style.height=h+'px';
+    c.width=Math.round(w*px); c.height=Math.round(h*px);
+    ctx.setTransform(px,0,0,px,0,0);
+    ctx.lineWidth=2; ctx.lineCap='round'; ctx.strokeStyle='#111827';
+  }
+  size(); window.addEventListener('resize', size);
+
+  let down=false,last=null;
+  const P=e=>{const r=c.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top};};
+  c.addEventListener('pointerdown',e=>{down=true; last=P(e);});
+  c.addEventListener('pointerup',   ()=>{down=false; last=null;});
+  c.addEventListener('pointerleave',()=>{down=false; last=null;});
+  c.addEventListener('pointermove', e=>{ if(!down) return; const p=P(e); ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(p.x,p.y); ctx.stroke(); last=p; });
+
+  const save=document.getElementById('btnSaveSig');
+  const clr =document.getElementById('btnClearSig');
+  if (clr)  clr.onclick  = ()=>{ ctx.clearRect(0,0,c.width,c.height); state.sig=''; document.getElementById('sigStatus').style.display='none'; localStorage.setItem(SKEY, JSON.stringify(state)); };
+  if (save) save.onclick = ()=>{ state.sig=c.toDataURL('image/png'); document.getElementById('sigStatus').style.display='inline'; localStorage.setItem(SKEY, JSON.stringify(state)); };
+}
 
 // -------- Init --------
 window.addEventListener('DOMContentLoaded', ()=>{
-  // Felder ggf. aus state laden
-  const setIf = (id,v)=>{ const el=document.getElementById(id); if(el && v) el.value=v; };
-  setIf('inCc', state.inCc); setIf('inBcc', state.inBcc);
-  setIf('inOp', state.inOp); setIf('inTr', state.inTr);
-  setIf('inTl', state.inTl); setIf('inLoc', state.inLoc);
-  if (document.getElementById('inDate') && !document.getElementById('inDate').value) {
-    const p=n=>String(n).padStart(2,'0'); const d=new Date();
-    document.getElementById('inDate').value=`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
-  }
-
-  // Events für Persistenz
-  ['inCc','inBcc','inOp','inTr','inTl','inLoc','inDate'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el) el.addEventListener('input', ()=>{ state[id]=el.value; localStorage.setItem(SKEY, JSON.stringify(state)); });
-  });
-
-  // Buttons verbinden
+  // Buttons
   document.getElementById('btnPdf') ?.addEventListener('click', onPdf);
   document.getElementById('btnMail')?.addEventListener('click', onMail);
   document.getElementById('btnGeo') ?.addEventListener('click', onGeo);
   document.getElementById('inLogo')?.addEventListener('change', onLogoPick);
 
-  // **WICHTIG**: Checkliste zeichnen
+  // Pflicht: Checkliste zeichnen
   renderChecklist();
 
-  // Signatur
+  // Pflicht: Signatur aktivieren
   initSignature();
 });
+
 
  })();
    
