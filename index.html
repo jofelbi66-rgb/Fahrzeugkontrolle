@@ -731,9 +731,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initSignature();
 }); // <-- schließt NUR den DOMContentLoaded-Listener
 
-
 <!-- Optionaler PDF-Hook (separat, kann auch weggelassen werden) -->
-<script>
 window.patchPdf = function (doc, m, y) {
   try {
     /* reserviert */
@@ -741,7 +739,7 @@ window.patchPdf = function (doc, m, y) {
     console.warn('patchPdf warn:', e);
   }
 };
-</script>
 
+</script>
 </body>
 </html>
