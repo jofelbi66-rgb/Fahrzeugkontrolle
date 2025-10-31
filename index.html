@@ -686,63 +686,58 @@ window.onGeo = async function onGeo(){
 };
 
 // >> START (einziger Script-Block)
+<script>
+  // --- GLOBAL: Logo auswählen/komprimieren ---
+  window.onLogoPick = async function onLogoPick(e) {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
 
-// --- GLOBAL: Logo auswählen/komprimieren ---
-window.onLogoPick = async function onLogoPick(e){
-  const f = e.target.files && e.target.files[0];
-  if (!f) return;
+    const data = await compressImageFile(f, 320, 0.8);   // deine Helper
+    const info = await probeImage(data);                // deine Helper
+    state.logo  = data;
+    state.logoAspect = info.w / info.h || 1;
 
-  const data = await compressImageFile(f, 320, 0.8); // deine Helper
-  const info = await probeImage(data);               // deine Helper
-  state.logo = data;
-  state.logoAspect = info.w / info.h || 1;
+    const li = document.getElementById('logoInfo');
+    if (li) li.textContent = `Logo gespeichert (${info.w}×${info.h})`;
+    localStorage.setItem(SKEY, JSON.stringify(state));
+  };
 
-  const li = document.getElementById('logoInfo');
-  if (li) li.textContent = `Logo gespeichert (${info.w}×${info.h})`;
-  localStorage.setItem(SKEY, JSON.stringify(state));
-};
+  // -------- Init --------
+  window.addEventListener('DOMContentLoaded', () => {
+    // Buttons verbinden
+    const bPdf  = document.getElementById('btnPdf');
+    if (bPdf)  bPdf.addEventListener('click', onPdf);
 
+    const bMail = document.getElementById('btnMail');
+    if (bMail) bMail.addEventListener('click', onMail);
 
+    const bGeo = document.getElementById('btnGeo');
+    if (bGeo && typeof window.onGeo === 'function') {
+      bGeo.addEventListener('click', window.onGeo);
+    }
 
-// … dein Code oberhalb bleibt unverändert …
+    // Logo-Picker
+    const inLogo = document.getElementById('inLogo');
+    if (inLogo && typeof window.onLogoPick === 'function') {
+      inLogo.addEventListener('change', window.onLogoPick);
+    }
 
-// -------- Init --------
-window.addEventListener('DOMContentLoaded', () => {
-  // Buttons
-  const bPdf  = document.getElementById('btnPdf');
-  if (bPdf)  bPdf.addEventListener('click', onPdf);
+    // Pflicht
+    renderChecklist();
+    initSignature();
+  });
 
-  const bMail = document.getElementById('btnMail');
-  if (bMail) bMail.addEventListener('click', onMail);
-
-  const bGeo  = document.getElementById('btnGeo');
-  if (bGeo && typeof window.onGeo === 'function') {
-    bGeo.addEventListener('click', window.onGeo);
-  }
-
-  // Logo-Picker
-  const inLogo = document.getElementById('inLogo');
-  if (inLogo && typeof window.onLogoPick === 'function') {
-    inLogo.addEventListener('change', window.onLogoPick);
-  }
-
-  // Pflicht: Checkliste & Signatur
-  renderChecklist();
-  initSignature();
-});
-
-// !!! Sehr wichtig: schließt die oben geöffnete IIFE (() => { ... })
-})();  
-
-// --- Optionaler PDF-Hook (kann bleiben oder weg) ---
-window.patchPdf = function (doc, m, y) {
-  try {
-    // reserviert
-  } catch (e) {
-    console.warn('patchPdf warn:', e);
-  }
-};
+  // --- Optionaler PDF-Hook (kann bleiben oder weg) ---
+  window.patchPdf = function (doc, m, y) {
+    try {
+      // reserviert
+    } catch (e) {
+      console.warn('patchPdf warn:', e);
+    }
+  };
 </script>
+
+
 </body>
 </html>
 
