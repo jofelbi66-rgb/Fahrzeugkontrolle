@@ -685,15 +685,19 @@ window.onGeo = async function onGeo(){
   }, err => alert('GPS fehlgeschlagen: ' + (err?.message || err)));
 };
 
-// >> START (einziger Script-Block)
+<!-- >> START (einziger Script-Block) -->
 <script>
-  // --- GLOBAL: Logo auswählen/komprimieren ---
-  window.onLogoPick = async function onLogoPick(e) {
+(function () {
+  'use strict';
+
+  // === GLOBAL: Logo wählen/komprimieren ==============================
+  window.onLogoPick = async function onLogoPick(e){
     const f = e.target.files && e.target.files[0];
     if (!f) return;
 
-    const data = await compressImageFile(f, 320, 0.8);   // deine Helper
-    const info = await probeImage(data);                // deine Helper
+    const data = await compressImageFile(f, 320, 0.8); // deine Helper
+    const info = await probeImage(data);               // deine Helper
+
     state.logo  = data;
     state.logoAspect = info.w / info.h || 1;
 
@@ -702,16 +706,16 @@ window.onGeo = async function onGeo(){
     localStorage.setItem(SKEY, JSON.stringify(state));
   };
 
-  // -------- Init --------
+  // === INIT nach DOMContentLoaded ===================================
   window.addEventListener('DOMContentLoaded', () => {
-    // Buttons verbinden
+    // Buttons
     const bPdf  = document.getElementById('btnPdf');
     if (bPdf)  bPdf.addEventListener('click', onPdf);
 
     const bMail = document.getElementById('btnMail');
     if (bMail) bMail.addEventListener('click', onMail);
 
-    const bGeo = document.getElementById('btnGeo');
+    const bGeo  = document.getElementById('btnGeo');
     if (bGeo && typeof window.onGeo === 'function') {
       bGeo.addEventListener('click', window.onGeo);
     }
@@ -722,23 +726,20 @@ window.onGeo = async function onGeo(){
       inLogo.addEventListener('change', window.onLogoPick);
     }
 
-    // Pflicht
+    // Pflicht: Checkliste & Signatur
     renderChecklist();
     initSignature();
   });
 
-  // --- Optionaler PDF-Hook (kann bleiben oder weg) ---
+  // === Optionaler PDF-Hook (kann leer bleiben) =======================
   window.patchPdf = function (doc, m, y) {
     try {
-      // reserviert
+      /* reserviert */
     } catch (e) {
       console.warn('patchPdf warn:', e);
     }
   };
+
+})(); // IIFE schließen
 </script>
-
-
-</body>
-</html>
-
-                
+<!-- << END Script-Block -->
