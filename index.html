@@ -685,8 +685,8 @@ window.onGeo = async function onGeo(){
   }, err => alert('GPS fehlgeschlagen: ' + (err?.message || err)));
 };
 
-<!-- === JS START (einziger Script-Block) === -->
-<script>
+// >> START (einziger Script-Block)
+
 // --- GLOBAL: Logo auswählen/komprimieren ---
 window.onLogoPick = async function onLogoPick(e){
   const f = e.target.files && e.target.files[0];
