@@ -685,6 +685,7 @@ window.onGeo = async function onGeo(){
   }, err => alert('GPS fehlgeschlagen: ' + (err?.message || err)));
 };
 
+<!-- === JS START (einziger Script-Block) === -->
 <script>
 // --- GLOBAL: Logo auswählen/komprimieren ---
 window.onLogoPick = async function onLogoPick(e){
@@ -703,7 +704,7 @@ window.onLogoPick = async function onLogoPick(e){
 
 // -------- Init --------
 window.addEventListener('DOMContentLoaded', () => {
-  // Buttons
+  // Buttons robust binden
   const bPdf  = document.getElementById('btnPdf');
   const bMail = document.getElementById('btnMail');
   const bGeo  = document.getElementById('btnGeo');
@@ -724,10 +725,8 @@ window.addEventListener('DOMContentLoaded', () => {
   renderChecklist();
   initSignature();
 }); // schließt DOMContentLoaded
-</script>
 
-<!-- Optionaler PDF-Hook (leer) -->
-<script>
+// Optionaler PDF-Hook (jetzt **im selben** Scriptblock)
 window.patchPdf = function (doc, m, y) {
   try {
     // reserviert
@@ -735,18 +734,12 @@ window.patchPdf = function (doc, m, y) {
     console.warn('patchPdf warn:', e);
   }
 };
-</script>
 
-<!-- Optionaler PDF-Hook (leer) -->
-<script>
-window.patchPdf = function (doc, m, y) {
-  try {
-    // reserviert
-  } catch (e) {
-    console.warn('patchPdf warn:', e);
-  }
-};
+// (optional, aber hilfreich wenn Listener global erwarten)
+if (typeof onPdf  === 'function') window.onPdf  = onPdf;
+if (typeof onMail === 'function') window.onMail = onMail;
 </script>
+<!-- === JS END === -->
 
 </body>
 </html>
