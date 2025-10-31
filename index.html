@@ -331,25 +331,50 @@ function buildPdf() {
     y += rowH + 2;
   });
 
-  // Unterschrift
-  y += 4;
-  doc.setFont('helvetica','bold'); doc.text('Digitale Unterschrift:', m, y); y += 4;
+// ===== Unterschrift (mit Mindestabstand) =====
+const MIN_SIG_AREA = 70;   // gewünschter freier Bereich (mm) ab jetzt
+if (y > pageH - m - MIN_SIG_AREA) {
+  doc.addPage();
+  y = m;
+}
 
-  const sigBoxW = pageW - 2*m, sigBoxH = 55, sigX = m, sigY = y + 2;
-  doc.setFillColor(255,255,255); doc.rect(sigX, sigY, sigBoxW, sigBoxH, 'F');
+// Überschrift mit etwas Abstand
+y += 6;
+doc.setFont('helvetica','bold');
+doc.text('Digitale Unterschrift:', m, y);
+y += 6;
 
-  if (state.sig) {
-    try {
-      const pad=3; const fmt = state.sig.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-      doc.addImage(state.sig, fmt, sigX+pad, sigY+pad, sigBoxW-2*pad, sigBoxH-2*pad);
-    } catch {
-      doc.setFont('helvetica','normal'); doc.text('(keine Signatur einbettbar)', m, sigY + 6);
-    }
-  } else {
-    doc.setDrawColor(200); doc.rect(sigX, sigY, sigBoxW, sigBoxH);
-    doc.setFont('helvetica','normal'); doc.text('(keine Signatur)', m, sigY + 6);
+// Große, weiße Box für die Signatur
+const sigBoxW = pageW - 2*m;
+const sigBoxH = 62;        // höher als vorher
+const sigX = m;
+const sigY = y;
+
+doc.setFillColor(255, 255, 255);
+doc.rect(sigX, sigY, sigBoxW, sigBoxH, 'F');
+
+if (state.sig) {
+  try {
+    const padIn = 3;
+    const fmt = state.sig.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+    doc.addImage(
+      state.sig, fmt,
+      sigX + padIn, sigY + padIn,
+      sigBoxW - 2*padIn, sigBoxH - 2*padIn
+    );
+  } catch {
+    doc.setFont('helvetica','normal');
+    doc.text('(keine Signatur einbettbar)', m, sigY + 6);
   }
-  y = sigY + sigBoxH + 6;
+} else {
+  doc.setDrawColor(200);
+  doc.rect(sigX, sigY, sigBoxW, sigBoxH);
+  doc.setFont('helvetica','normal');
+  doc.text('(keine Signatur)', m, sigY + 6);
+}
+
+y = sigY + sigBoxH + 8;
+
 // ===== Fotos je Checkpunkt als Folgeseiten anfügen =====
 const m2 = m; // Außenrand weiterverwenden
 items.forEach(it=>{
