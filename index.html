@@ -702,44 +702,46 @@ window.onLogoPick = async function onLogoPick(e){
   localStorage.setItem(SKEY, JSON.stringify(state));
 };
 
-// -------- Init --------
-window.addEventListener('DOMContentLoaded', () => {
-  // Buttons robust binden
-  const bPdf  = document.getElementById('btnPdf');
-  const bMail = document.getElementById('btnMail');
-  const bGeo  = document.getElementById('btnGeo');
+<!-- JS START: EINZIGER Script-Block -->
+<script>
+// … dein Code oberhalb bleibt unverändert …
 
-  if (bPdf)  bPdf.addEventListener('click', () => onPdf());
-  if (bMail) bMail.addEventListener('click', () => onMail());
+// ------- Init -------
+window.addEventListener('DOMContentLoaded', () => {
+  // Buttons
+  const bPdf  = document.getElementById('btnPdf');
+  if (bPdf)  bPdf.addEventListener('click', onPdf);
+
+  const bMail = document.getElementById('btnMail');
+  if (bMail) bMail.addEventListener('click', onMail);
+
+  const bGeo  = document.getElementById('btnGeo');
   if (bGeo && typeof window.onGeo === 'function') {
     bGeo.addEventListener('click', window.onGeo);
   }
 
-  // Logo-Input
+  // Logo-Picker
   const inLogo = document.getElementById('inLogo');
   if (inLogo && typeof window.onLogoPick === 'function') {
     inLogo.addEventListener('change', window.onLogoPick);
   }
 
-  // Pflicht: Checkliste + Signatur
+  // Pflicht: Checkliste & Signatur
   renderChecklist();
   initSignature();
-}); // schließt DOMContentLoaded
+}); // <-- schließt NUR den DOMContentLoaded-Listener
+</script>
 
-// Optionaler PDF-Hook (jetzt **im selben** Scriptblock)
+<!-- Optionaler PDF-Hook (separat, kann auch weggelassen werden) -->
+<script>
 window.patchPdf = function (doc, m, y) {
   try {
-    // reserviert
+    /* reserviert */
   } catch (e) {
     console.warn('patchPdf warn:', e);
   }
 };
-
-// (optional, aber hilfreich wenn Listener global erwarten)
-if (typeof onPdf  === 'function') window.onPdf  = onPdf;
-if (typeof onMail === 'function') window.onMail = onMail;
 </script>
-<!-- === JS END === -->
 
 </body>
 </html>
