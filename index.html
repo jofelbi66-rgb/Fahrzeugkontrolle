@@ -700,9 +700,17 @@ window.onLogoPick = async function onLogoPick(e){
 
 // -------- Init --------
 window.addEventListener('DOMContentLoaded', ()=>{
+console.log('[INIT] bind:',
+  'btnPdf=', !!document.getElementById('btnPdf'),
+  'btnMail=', !!document.getElementById('btnMail'),
+  'onPdf=', typeof onPdf,
+  'onMail=', typeof onMail
+);
+  
   // Buttons
-  document.getElementById('btnPdf') ?.addEventListener('click', onPdf);
-  document.getElementById('btnMail')?.addEventListener('click', onMail);
+document.getElementById('btnPdf') ?.addEventListener('click', () => onPdf());
+document.getElementById('btnMail')?.addEventListener('click', () => onMail());
+ 
 const btnGeo  = document.getElementById('btnGeo');
 if (btnGeo && typeof window.onGeo === 'function') {
   btnGeo.addEventListener('click', window.onGeo);
