@@ -435,8 +435,14 @@ items.forEach(it=>{
   return doc.output('blob');
 }
 
-// -------- Utilities --------
-const blobToBase64 = blob => new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(blob); });
+// ------- Utilities -------
+const blobToBase64 = (blob) => new Promise((res, rej) => {
+  const r = new FileReader();
+  r.onload  = () => res(r.result.split(',')[1]);  // <-- Komma entfernt
+  r.onerror = rej;
+  r.readAsDataURL(blob);
+});
+
 
 // -------- Aktionen --------
 function onPdf(){
