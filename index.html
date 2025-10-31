@@ -685,51 +685,57 @@ window.onGeo = async function onGeo(){
   }, err => alert('GPS fehlgeschlagen: ' + (err?.message || err)));
 };
 
+<script>
 // --- GLOBAL: Logo auswählen/komprimieren ---
 window.onLogoPick = async function onLogoPick(e){
   const f = e.target.files && e.target.files[0];
   if (!f) return;
-  const data = await compressImageFile(f, 320, 0.8);     // nutzt deine vorhandene Helper
-  const info = await probeImage(data);                    // nutzt deine vorhandene Helper
+
+  const data = await compressImageFile(f, 320, 0.8); // deine Helper
+  const info = await probeImage(data);               // deine Helper
   state.logo = data;
   state.logoAspect = info.w / info.h || 1;
+
   const li = document.getElementById('logoInfo');
   if (li) li.textContent = `Logo gespeichert (${info.w}×${info.h})`;
   localStorage.setItem(SKEY, JSON.stringify(state));
 };
 
 // -------- Init --------
-window.addEventListener('DOMContentLoaded', ()=>{
-console.log('[INIT] bind:',
-  'btnPdf=', !!document.getElementById('btnPdf'),
-  'btnMail=', !!document.getElementById('btnMail'),
-  'onPdf=', typeof onPdf,
-  'onMail=', typeof onMail
-);
-  
+window.addEventListener('DOMContentLoaded', () => {
   // Buttons
-document.getElementById('btnPdf') ?.addEventListener('click', () => onPdf());
-document.getElementById('btnMail')?.addEventListener('click', () => onMail());
- 
-const btnGeo  = document.getElementById('btnGeo');
-if (btnGeo && typeof window.onGeo === 'function') {
-  btnGeo.addEventListener('click', window.onGeo);
-}
+  const bPdf  = document.getElementById('btnPdf');
+  const bMail = document.getElementById('btnMail');
+  const bGeo  = document.getElementById('btnGeo');
 
-const inLogo = document.getElementById('inLogo');
-if (inLogo && typeof window.onLogoPick === 'function') {
-  inLogo.addEventListener('change', window.onLogoPick);
-}
+  if (bPdf)  bPdf.addEventListener('click', () => onPdf());
+  if (bMail) bMail.addEventListener('click', () => onMail());
+  if (bGeo && typeof window.onGeo === 'function') {
+    bGeo.addEventListener('click', window.onGeo);
+  }
 
-// Pflicht: Checkliste zeichnen
-renderChecklist();
+  // Logo-Input
+  const inLogo = document.getElementById('inLogo');
+  if (inLogo && typeof window.onLogoPick === 'function') {
+    inLogo.addEventListener('change', window.onLogoPick);
+  }
 
-// Pflicht: Signatur aktivieren
-initSignature();
-
-}); // schließt NUR den DOMContentLoaded-Listener
+  // Pflicht: Checkliste + Signatur
+  renderChecklist();
+  initSignature();
+}); // schließt DOMContentLoaded
 </script>
 
+<!-- Optionaler PDF-Hook (leer) -->
+<script>
+window.patchPdf = function (doc, m, y) {
+  try {
+    // reserviert
+  } catch (e) {
+    console.warn('patchPdf warn:', e);
+  }
+};
+</script>
 
 <!-- Optionaler PDF-Hook (leer) -->
 <script>
