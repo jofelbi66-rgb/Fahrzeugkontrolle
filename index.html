@@ -710,18 +710,15 @@ if (inLogo && typeof window.onLogoPick === 'function') {
   inLogo.addEventListener('change', window.onLogoPick);
 }
 
-  // Pflicht: Checkliste zeichnen
-  renderChecklist();
+// Pflicht: Checkliste zeichnen
+renderChecklist();
 
-  // Pflicht: Signatur aktivieren
-  initSignature();
-});
+// Pflicht: Signatur aktivieren
+initSignature();
 
-
- })();
-   
-
+})(); // Ende des IIFE
 </script>
+
 <!-- Optionaler PDF-Hook (leer) -->
 <script>
   window.patchPdf = function (doc, m, y) {
