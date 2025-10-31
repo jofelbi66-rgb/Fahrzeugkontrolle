@@ -716,13 +716,17 @@ renderChecklist();
 // Pflicht: Signatur aktivieren
 initSignature();
 
-})(); // Ende des IIFE
+})(); // Ende des Hauptscripts (IIFE)
 </script>
 
 <!-- Optionaler PDF-Hook (leer) -->
 <script>
   window.patchPdf = function (doc, m, y) {
-    try { /* reserviert */ } catch (e) { console.warn('patchPdf warn:', e); }
+    try {
+      // reserviert
+    } catch (e) {
+      console.warn('patchPdf warn:', e);
+    }
   };
 </script>
 
