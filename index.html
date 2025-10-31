@@ -309,72 +309,69 @@ function buildPdf() {
     const wrapped = doc.splitTextToSize(txt, colW.text - 4);
     const rowH = Math.max(rowHmin, 5 + wrapped.length*4);
 
-    // Platz für Unterschrift lassen
-    if (y + rowH > pageH - m - 70) {
-      doc.addPage(); y = m;
-      doc.setDrawColor(200); doc.setFillColor(245,245,245);
-      doc.rect(m, y, pageW - 2*m, 8, 'F');
-      doc.setFont('helvetica','bold');
-      doc.text('Status',     x.status + 2, y + 5);
-      doc.text('Checkpunkt', x.text   + 2, y + 5);
-      doc.text('Foto',       x.foto   + 2, y + 5);
-      y += 10;
-    }
+// ----------------------------
+// Checklisten-Ausgabe (Zebra)
+// ----------------------------
+rows.forEach((x, rowIndex) => {
+  const bg = (rowIndex % 2 === 0) ? [255, 255, 255] : [240, 240, 240];
+  doc.setFillColor(bg[0], bg[1], bg[2]);
+  doc.rect(m, y - 1, pageW - 2 * m, rowH, 'F');
 
-    const bg = (rowIndex++ % 2 === 0) ? zebraA : zebraB;
-    doc.setFillColor(bg[0],bg[1],bg[2]); doc.rect(m, y-1, pageW-2*m, rowH, 'F');
+  // Spalteninhalte
+  doc.text(`[${x.sev}]`, x.status + 2, y + 5);
+  doc.text(x.textWrapped, x.text + 2, y + 5);
+  doc.text(x.foto, x.foto + 2, y + 5);
 
-    doc.text(`[${sev}]`, x.status+2, y+5);
-    doc.text(wrapped,     x.text  +2, y+5);
-    doc.text(fotos,       x.foto  +2, y+5);
+  // Linien unter jeder Zeile
+  doc.setDrawColor(230);
+  doc.line(m, y + rowH - 1, pageW - m, y + rowH - 1);
 
-    doc.setDrawColor(230); doc.line(m, y-1+rowH, pageW-m, y-1+rowH);
-    y += rowH + 2;
-  });
+  y += rowH + 2;
+});
 
-// ===== Unterschrift (mit Mindestabstand) =====
-const MIN_SIG_AREA = 70;   // gewünschter freier Bereich (mm) ab jetzt
-if (y > pageH - m - MIN_SIG_AREA) {
-  doc.addPage();
-  y = m;
-}
+// ----------------------------
+// Abstand zwischen Tabelle & Unterschrift
+// ----------------------------
+y += 20; // <-- Abstand hier anpassen (z. B. 30 für noch mehr Weißraum)
 
-// Überschrift mit etwas Abstand
-y += 6;
-doc.setFont('helvetica','bold');
+
+// ----------------------------
+// Unterschrift
+// ----------------------------
+y += 4;
+doc.setFont('helvetica', 'bold');
 doc.text('Digitale Unterschrift:', m, y);
-y += 6;
+y += 4;
 
-// Große, weiße Box für die Signatur
-const sigBoxW = pageW - 2*m;
-const sigBoxH = 62;        // höher als vorher
+// Weißes Feld für Unterschrift zeichnen
+const sigBoxW = pageW - 2 * m;
+const sigBoxH = 55;
 const sigX = m;
-const sigY = y;
+const sigY = y + 2;
 
 doc.setFillColor(255, 255, 255);
 doc.rect(sigX, sigY, sigBoxW, sigBoxH, 'F');
 
+// Falls Unterschrift vorhanden, Bild einfügen
 if (state.sig) {
   try {
-    const padIn = 3;
+    const pad = 3;
     const fmt = state.sig.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-    doc.addImage(
-      state.sig, fmt,
-      sigX + padIn, sigY + padIn,
-      sigBoxW - 2*padIn, sigBoxH - 2*padIn
-    );
+    doc.addImage(state.sig, fmt, sigX + pad, sigY + pad, sigBoxW - 2 * pad, sigBoxH - 2 * pad);
   } catch {
-    doc.setFont('helvetica','normal');
+    doc.setFont('helvetica', 'normal');
     doc.text('(keine Signatur einbettbar)', m, sigY + 6);
   }
 } else {
   doc.setDrawColor(200);
   doc.rect(sigX, sigY, sigBoxW, sigBoxH);
-  doc.setFont('helvetica','normal');
+  doc.setFont('helvetica', 'normal');
   doc.text('(keine Signatur)', m, sigY + 6);
 }
 
-y = sigY + sigBoxH + 8;
+// Nach der Signatur wieder etwas Abstand
+y += sigBoxH + 6;
+  
 
 // ===== Fotos je Checkpunkt als Folgeseiten anfügen =====
 const m2 = m; // Außenrand weiterverwenden
