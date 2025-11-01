@@ -520,7 +520,7 @@ function renderChecklist(){
        <input type="file" accept="image&#x2F;*" capture="environment" style="display:block;margin-top:6px">
          </label>
         <div class="photos" id="ph_${it.id}"></div>
-      `;
+      `; // <--schließender Backtick
       host.appendChild(card);
 
       if (!state.res[it.id]) state.res[it.id] = { sev:'', note:'', photos:[] };
