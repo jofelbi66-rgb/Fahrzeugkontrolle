@@ -687,6 +687,8 @@ window.onGeo = async function onGeo(){
   // NICHTS außerhalb weiterer <script>-Tags.
 
   // Buttons / Events NUR hier binden:
+  console.log('✅ Script erreicht Ende ohne Syntaxfehler');
+
   window.addEventListener('DOMContentLoaded', () => {
     const bPdf  = document.getElementById('btnPdf');
     if (bPdf && typeof onPdf === 'function') bPdf.addEventListener('click', onPdf);
