@@ -489,6 +489,8 @@ async function onMail(){
     
 // === CHECKLISTE + HILFSFUNKTIONEN ===
 function renderChecklist(){
+ window.renderChecklist = renderChecklist;
+
   const host = document.getElementById('checklist');
   if (!host) return;
   host.innerHTML = '';
