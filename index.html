@@ -170,48 +170,38 @@
     ];
 
 // --- DIAGNOSE START ---
-console.log('[INIT] Script geladen');
-window.addEventListener('DOMContentLoaded', ()=>{
+// --- INIT nach DOMContentLoaded --------------------------------------------
+window.addEventListener('DOMContentLoaded', () => {
   console.log('[INIT] DOMContentLoaded fired');
 
-  const ck = document.getElementById('checklist');
-  console.log('[INIT] #checklist:', !!ck);
-  if (!ck) {
-    alert('FEHLT: <div id="checklist"></div> im HTML.');
+  // Buttons
+  const bPdf  = document.getElementById('btnPdf');
+  if (bPdf && typeof window.onPdf === 'function') {
+    bPdf.addEventListener('click', window.onPdf);
   }
 
-  const sig = document.getElementById('sig');
-  console.log('[INIT] #sig canvas:', !!sig);
-  if (!sig) {
-    alert('FEHLT: <canvas id="sig"></canvas> im HTML.');
+  const bMail = document.getElementById('btnMail');
+  if (bMail && typeof window.onMail === 'function') {
+    bMail.addEventListener('click', window.onMail);
   }
 
-  try {
-    console.log('[INIT] renderChecklist vorhanden:', typeof renderChecklist);
-    if (typeof renderChecklist === 'function') {
-      renderChecklist();
-      console.log('[INIT] renderChecklist aufgerufen');
-    } else {
-      alert('renderChecklist ist nicht definiert – Script wurde vorher abgebrochen.');
-    }
-  } catch (e) {
-    console.error('[INIT] Fehler bei renderChecklist:', e);
-    alert('Fehler bei renderChecklist: ' + (e?.message || e));
+  const btnGeo = document.getElementById('btnGeo');
+  if (btnGeo && typeof window.onGeo === 'function') {
+    btnGeo.addEventListener('click', window.onGeo);
   }
 
-  try {
-    if (typeof initSignature === 'function') {
-      initSignature();
-      console.log('[INIT] initSignature aufgerufen');
-    } else {
-      alert('initSignature ist nicht definiert – Script wurde vorher abgebrochen.');
-    }
-  } catch (e) {
-    console.error('[INIT] Fehler bei initSignature:', e);
-    alert('Fehler bei initSignature: ' + (e?.message || e));
+  // Logo-Picker
+  const inLogo = document.getElementById('inLogo');
+  if (inLogo && typeof window.onLogoPick === 'function') {
+    inLogo.addEventListener('change', window.onLogoPick);
   }
+
+  // Pflicht
+  if (typeof renderChecklist === 'function') renderChecklist();
+  if (typeof initSignature   === 'function') initSignature();
+
+  console.log('[INIT] abgeschlossen');
 });
-// --- DIAGNOSE ENDE ---
 
 
 // -------- Signatur-Setup (MUSS vor dem DOMContentLoaded stehen) --------
