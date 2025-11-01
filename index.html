@@ -702,10 +702,10 @@ window.onGeo = async function onGeo(){
   window.addEventListener('DOMContentLoaded', () => {
     // Buttons
     const bPdf  = document.getElementById('btnPdf');
-    if (bPdf)  bPdf.addEventListener('click', onPdf);
+    if (bPdf)  bPdf.addEventListener('click', window.onPdf);
 
     const bMail = document.getElementById('btnMail');
-    if (bMail) bMail.addEventListener('click', onMail);
+    if (bMail) bMail.addEventListener('click', window.onMail);
 
     const bGeo  = document.getElementById('btnGeo');
     if (bGeo && typeof window.onGeo === 'function') {
