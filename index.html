@@ -310,11 +310,17 @@ function buildPdf() {
     y += rowH + 2;
   });
 
-  // Unterschrift
-  y += 4;
-  doc.setFont('helvetica','bold'); doc.text('Digitale Unterschrift:', m, y); y += 4;
+ - // Unterschrift
+- y += 4;
++ // Unterschrift
++ y += 8;                      // mehr Abstand von der Tabelle zum Label
 
-  const sigBoxW = pageW - 2*m, sigBoxH = 55, sigX = m, sigY = y + 2;
+ doc.setFont('helvetica','bold'); doc.text('Digitale Unterschrift:', m, y);
+- y += 4;
++ // kein zusätzliches y-Inkrement hinter dem Label
+
+ const sigBoxW = pageW - 2*m, sigBoxH = 55, sigX = m, sigY = y + 2;
+
   doc.setFillColor(255,255,255); doc.rect(sigX, sigY, sigBoxW, sigBoxH, 'F');
 
   if (state.sig) {
