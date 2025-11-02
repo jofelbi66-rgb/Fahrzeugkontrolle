@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Fahrzeugkontrolle  Schwerlast (GitHub Pages)</title>
+  <title>Fahrzeugkontrolle – Schwerlast (GitHub Pages)</title>
 
   <!-- App-/Theme -->
   <meta name="theme-color" content="#0076BC">
@@ -11,7 +11,7 @@
   <meta name="color-scheme" content="light">
 
   <!-- Favicons / Touch-Icons -->
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27128%27%20height%3D%27128%27%20stroke%3D%27white%27%20stroke-width%3D%2710%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' rx='24' ry='24' fill='%230076BC'/%3E%3Crect x='20' y='20' width='88' height='88' rx='18' ry='18' fill='none' stroke='white' stroke-width='6'/%3E%3Cpath d='M36 66 L58 86 L94 42' fill='none' stroke='white' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <link rel="preload" as="image" href="https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/felbermayr_logo.png?v=7" crossorigin="anonymous">
   <link rel="icon" type="image/png" sizes="32x32" href="https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/felbermayr_logo.png?v=7">
   <link rel="apple-touch-icon" href="https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/felbermayr_logo.png?v=7">
@@ -47,7 +47,6 @@
   </style>
 </head>
 <body>
-  
   <!-- Logo fest vorladen (für PDF) -->
   <img id="felberLogo"
        src="https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/felbermayr_logo.png?v=7"
@@ -60,7 +59,7 @@
       <h1>Fahrzeugkontrolle – Schwerlast/Zugmaschine</h1>
 
       <!-- Zusatzkopfdaten -->
-      <div class="row" id="kopfdaten-extra" style="gap: 18px; align-items: center; margin-top: 6px;">
+      <section class="row" id="kopfdaten-extra" style="gap: 18px; align-items: center; margin-top: 6px;">
         <fieldset style="border:0; padding:0; margin:0;">
           <legend style="font-weight:600; margin-bottom:4px;">Los *</legend>
           <label class="chip"><input type="radio" name="los" value="4.1"> 4.1</label>
@@ -80,7 +79,7 @@
           <label class="chip"><input type="radio" name="isa" value="Berkhof"> Berkhof</label>
           <label class="chip"><input type="radio" name="isa" value="Hildesheim"> Hildesheim</label>
         </fieldset>
-      </div>
+      </section>
 
       <div class="row">
         <button class="btn" id="btnGeo">GPS-Ort</button>
@@ -91,7 +90,7 @@
   </header>
 
   <main class="wrap">
-    <div>
+    <section>
       <h2>Empfänger / Versand</h2>
       <div class="grid grid-2">
         <label><span>Dispo-E-Mail</span>
@@ -101,7 +100,7 @@
       </div>
       <label><span>BCC (optional)</span><input id="inBcc" placeholder="bcc@firma.de"></label>
       <p class="help">Versand per Google-Relay mit PDF-Anhang. Adressen werden nur lokal gespeichert.</p>
-    </div>
+    </section>
 
     <section>
       <h2>Fahrzeugdaten</h2>
@@ -118,8 +117,7 @@
     <section>
       <h2>Logo für Bericht (optional)</h2>
       <div class="row">
-      <input type="file" id="inLogo" accept="image&#x2F;*" />
-  
+        <input type="file" id="inLogo" accept="image/*">
         <span class="help">Einmal auswählen → wird klein gespeichert (PDF bleibt &lt; 200 kB).</span>
       </div>
       <div id="logoInfo" class="status"></div>
@@ -151,7 +149,6 @@
 
   <script>
   (function(){
-   'use strict'; 
     const { jsPDF } = window.jspdf;
     const $ = s => document.querySelector(s);
     const SKEY='fahrzeugkontrolle_pages_single';
@@ -172,38 +169,48 @@
     ];
 
 // --- DIAGNOSE START ---
-// --- INIT nach DOMContentLoaded --------------------------------------------
-window.addEventListener('DOMContentLoaded', () => {
+console.log('[INIT] Script geladen');
+window.addEventListener('DOMContentLoaded', ()=>{
   console.log('[INIT] DOMContentLoaded fired');
 
-  // Buttons
-  const bPdf  = document.getElementById('btnPdf');
-  if (bPdf && typeof window.onPdf === 'function') {
-    bPdf.addEventListener('click', window.onPdf);
+  const ck = document.getElementById('checklist');
+  console.log('[INIT] #checklist:', !!ck);
+  if (!ck) {
+    alert('FEHLT: <div id="checklist"></div> im HTML.');
   }
 
-  const bMail = document.getElementById('btnMail');
-  if (bMail && typeof window.onMail === 'function') {
-    bMail.addEventListener('click', window.onMail);
+  const sig = document.getElementById('sig');
+  console.log('[INIT] #sig canvas:', !!sig);
+  if (!sig) {
+    alert('FEHLT: <canvas id="sig"></canvas> im HTML.');
   }
 
-  const btnGeo = document.getElementById('btnGeo');
-  if (btnGeo && typeof window.onGeo === 'function') {
-    btnGeo.addEventListener('click', window.onGeo);
+  try {
+    console.log('[INIT] renderChecklist vorhanden:', typeof renderChecklist);
+    if (typeof renderChecklist === 'function') {
+      renderChecklist();
+      console.log('[INIT] renderChecklist aufgerufen');
+    } else {
+      alert('renderChecklist ist nicht definiert – Script wurde vorher abgebrochen.');
+    }
+  } catch (e) {
+    console.error('[INIT] Fehler bei renderChecklist:', e);
+    alert('Fehler bei renderChecklist: ' + (e?.message || e));
   }
 
-  // Logo-Picker
-  const inLogo = document.getElementById('inLogo');
-  if (inLogo && typeof window.onLogoPick === 'function') {
-    inLogo.addEventListener('change', window.onLogoPick);
+  try {
+    if (typeof initSignature === 'function') {
+      initSignature();
+      console.log('[INIT] initSignature aufgerufen');
+    } else {
+      alert('initSignature ist nicht definiert – Script wurde vorher abgebrochen.');
+    }
+  } catch (e) {
+    console.error('[INIT] Fehler bei initSignature:', e);
+    alert('Fehler bei initSignature: ' + (e?.message || e));
   }
-
-  // Pflicht
-  if (typeof renderChecklist === 'function') renderChecklist();
-  if (typeof initSignature   === 'function') initSignature();
-
-  console.log('[INIT] abgeschlossen');
 });
+// --- DIAGNOSE ENDE ---
 
 
 // -------- Signatur-Setup (MUSS vor dem DOMContentLoaded stehen) --------
@@ -301,70 +308,48 @@ function buildPdf() {
     const wrapped = doc.splitTextToSize(txt, colW.text - 4);
     const rowH = Math.max(rowHmin, 5 + wrapped.length*4);
 
-// ----------------------------
-// Checklisten-Ausgabe (Zebra)
-// ----------------------------
-rows.forEach((x, rowIndex) => {
-  const bg = (rowIndex % 2 === 0) ? [255, 255, 255] : [240, 240, 240];
-  doc.setFillColor(bg[0], bg[1], bg[2]);
-  doc.rect(m, y - 1, pageW - 2 * m, rowH, 'F');
+    // Platz für Unterschrift lassen
+    if (y + rowH > pageH - m - 70) {
+      doc.addPage(); y = m;
+      doc.setDrawColor(200); doc.setFillColor(245,245,245);
+      doc.rect(m, y, pageW - 2*m, 8, 'F');
+      doc.setFont('helvetica','bold');
+      doc.text('Status',     x.status + 2, y + 5);
+      doc.text('Checkpunkt', x.text   + 2, y + 5);
+      doc.text('Foto',       x.foto   + 2, y + 5);
+      y += 10;
+    }
 
-  // Spalteninhalte
-  doc.text(`[${x.sev}]`, x.status + 2, y + 5);
-  doc.text(x.textWrapped, x.text + 2, y + 5);
-  doc.text(x.foto, x.foto + 2, y + 5);
+    const bg = (rowIndex++ % 2 === 0) ? zebraA : zebraB;
+    doc.setFillColor(bg[0],bg[1],bg[2]); doc.rect(m, y-1, pageW-2*m, rowH, 'F');
 
-  // Linien unter jeder Zeile
-  doc.setDrawColor(230);
-  doc.line(m, y + rowH - 1, pageW - m, y + rowH - 1);
+    doc.text(`[${sev}]`, x.status+2, y+5);
+    doc.text(wrapped,     x.text  +2, y+5);
+    doc.text(fotos,       x.foto  +2, y+5);
 
-  y += rowH + 2;
-});
+    doc.setDrawColor(230); doc.line(m, y-1+rowH, pageW-m, y-1+rowH);
+    y += rowH + 2;
+  });
 
-// ----------------------------
-// Abstand zwischen Tabelle & Unterschrift
-// ----------------------------
-y += 20; // <-- Abstand hier anpassen (z. B. 30 für noch mehr Weißraum)
+  // Unterschrift
+  y += 4;
+  doc.setFont('helvetica','bold'); doc.text('Digitale Unterschrift:', m, y); y += 4;
 
+  const sigBoxW = pageW - 2*m, sigBoxH = 55, sigX = m, sigY = y + 2;
+  doc.setFillColor(255,255,255); doc.rect(sigX, sigY, sigBoxW, sigBoxH, 'F');
 
-// ----------------------------
-// Unterschrift
-// ----------------------------
-y += 4;
-doc.setFont('helvetica', 'bold');
-doc.text('Digitale Unterschrift:', m, y);
-y += 4;
-
-// Weißes Feld für Unterschrift zeichnen
-const sigBoxW = pageW - 2 * m;
-const sigBoxH = 55;
-const sigX = m;
-const sigY = y + 2;
-
-doc.setFillColor(255, 255, 255);
-doc.rect(sigX, sigY, sigBoxW, sigBoxH, 'F');
-
-// Falls Unterschrift vorhanden, Bild einfügen
-if (state.sig) {
-  try {
-    const pad = 3;
-    const fmt = state.sig.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-    doc.addImage(state.sig, fmt, sigX + pad, sigY + pad, sigBoxW - 2 * pad, sigBoxH - 2 * pad);
-  } catch {
-    doc.setFont('helvetica', 'normal');
-    doc.text('(keine Signatur einbettbar)', m, sigY + 6);
+  if (state.sig) {
+    try {
+      const pad=3; const fmt = state.sig.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+      doc.addImage(state.sig, fmt, sigX+pad, sigY+pad, sigBoxW-2*pad, sigBoxH-2*pad);
+    } catch {
+      doc.setFont('helvetica','normal'); doc.text('(keine Signatur einbettbar)', m, sigY + 6);
+    }
+  } else {
+    doc.setDrawColor(200); doc.rect(sigX, sigY, sigBoxW, sigBoxH);
+    doc.setFont('helvetica','normal'); doc.text('(keine Signatur)', m, sigY + 6);
   }
-} else {
-  doc.setDrawColor(200);
-  doc.rect(sigX, sigY, sigBoxW, sigBoxH);
-  doc.setFont('helvetica', 'normal');
-  doc.text('(keine Signatur)', m, sigY + 6);
-}
-
-// Nach der Signatur wieder etwas Abstand
-y += sigBoxH + 6;
-  
-
+  y = sigY + sigBoxH + 6;
 // ===== Fotos je Checkpunkt als Folgeseiten anfügen =====
 const m2 = m; // Außenrand weiterverwenden
 items.forEach(it=>{
@@ -425,16 +410,10 @@ items.forEach(it=>{
   } catch(_) {}
 
   return doc.output('blob');
+}
 
-
-// ------- Utilities -------
-const blobToBase64 = (blob) => new Promise((res, rej) => {
-  const r = new FileReader();
-  r.onload  = () => res(r.result.split(',')[1]);  // <-- Komma entfernt
-  r.onerror = rej;
-  r.readAsDataURL(blob);
-});
-
+// -------- Utilities --------
+const blobToBase64 = blob => new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(blob); });
 
 // -------- Aktionen --------
 function onPdf(){
@@ -446,8 +425,7 @@ function onPdf(){
     const s=document.getElementById('status'); if(s) s.textContent='PDF gespeichert ('+(blob.size/1024/1024).toFixed(2)+' MB)';
   }catch(err){ alert('PDF-Fehler: '+(err?.message||err)); }
 }
-window.onPdf = onPdf;
-    
+
 async function onMail(){
   try{
     const RELAY_URL='https://script.google.com/macros/s/AKfycbwNt85E1m00CkLoL2U5wI8hCK5C2Zu0SzMb4x__sw7nXkGtk1nwXnYvXsRyv8CUDlsC/exec';
@@ -487,12 +465,8 @@ async function onMail(){
     alert('Fehler beim Versand: ' + (err?.message || err));
   }
 }
-    window.onMail = onMail;
-    
 // === CHECKLISTE + HILFSFUNKTIONEN ===
 function renderChecklist(){
- window.renderChecklist = renderChecklist;
-
   const host = document.getElementById('checklist');
   if (!host) return;
   host.innerHTML = '';
@@ -501,19 +475,27 @@ function renderChecklist(){
   groups.forEach(sec=>{
     host.insertAdjacentHTML('beforeend', `<div style="font-weight:700;margin:6px 0">${sec}</div>`);
     items.filter(i=>i.sec===sec).forEach(it=>{
-     // Beispiel: Karte/HTML für einen Checklisteneintrag
-const card = document.createElement('div');
-card.className = 'card';
-
-card.innerHTML = `
-  <label class="row">
-    <input type="file" accept="image/*" capture="environment" style="display:block;margin-top:6px">
-  </label>
-  <div class="photos" id="ph_${it.id}"></div>
-`; // <— Backtick + Semikolon
-host.appendChild(card);
-
-
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="row" style="justify-content:space-between">
+          <div class="row" style="gap:8px">
+            <div style="font-weight:600">${it.title}</div>${it.req?'<span class="chip">Pflicht</span>':''}
+          </div>
+          <div class="row">
+            <button class="btn" data-sev="OK">OK</button>
+            <button class="btn" data-sev="Hinweis">Hinweis</button>
+            <button class="btn" data-sev="Mangel">Mangel</button>
+          </div>
+        </div>
+        <textarea placeholder="Bemerkung / Maßnahmen…"></textarea>
+        <label style="display:block;margin-top:6px">
+          <span style="font-size:14px;font-weight:600">Foto hinzufügen</span>
+          <input type="file" accept="image/*" capture="environment" style="display:block;margin-top:6px">
+        </label>
+        <div class="photos" id="ph_${it.id}"></div>
+      `;
+      host.appendChild(card);
 
       if (!state.res[it.id]) state.res[it.id] = { sev:'', note:'', photos:[] };
 
@@ -670,37 +652,36 @@ window.onGeo = async function onGeo(){
     } catch(_) {}
   }, err => alert('GPS fehlgeschlagen: ' + (err?.message || err)));
 };
- })();
- <!-- >> START (einziger Script-Block) -->
 
-(() => {
-  'use strict';
+// --- GLOBAL: Logo auswählen/komprimieren ---
+window.onLogoPick = async function onLogoPick(e){
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  const data = await compressImageFile(f, 320, 0.8);     // nutzt deine vorhandene Helper
+  const info = await probeImage(data);                    // nutzt deine vorhandene Helper
+  state.logo = data;
+  state.logoAspect = info.w / info.h || 1;
+  const li = document.getElementById('logoInfo');
+  if (li) li.textContent = `Logo gespeichert (${info.w}×${info.h})`;
+  localStorage.setItem(SKEY, JSON.stringify(state));
+};
 
-  // Alles, was hier vorher stand, kommt IN dieses IIFE.
-  // NICHTS außerhalb weiterer <script>-Tags.
+// -------- Init --------
+window.addEventListener('DOMContentLoaded', ()=>{
+  // Buttons
+  document.getElementById('btnPdf') ?.addEventListener('click', onPdf);
+  document.getElementById('btnMail')?.addEventListener('click', onMail);
+const btnGeo  = document.getElementById('btnGeo');
+if (btnGeo && typeof window.onGeo === 'function') {
+  btnGeo.addEventListener('click', window.onGeo);
+}
 
-  // Buttons / Events NUR hier binden:
-  console.log('✅ Script erreicht Ende ohne Syntaxfehler');
+const inLogo = document.getElementById('inLogo');
+if (inLogo && typeof window.onLogoPick === 'function') {
+  inLogo.addEventListener('change', window.onLogoPick);
+}
 
-  window.addEventListener('DOMContentLoaded', () => {
-    const bPdf  = document.getElementById('btnPdf');
-    if (bPdf && typeof onPdf === 'function') bPdf.addEventListener('click', onPdf);
-
-    const bMail = document.getElementById('btnMail');
-    if (bMail && typeof onMail === 'function') bMail.addEventListener('click', onMail);
-
-    const bGeo  = document.getElementById('btnGeo');
-    if (bGeo && typeof onGeo === 'function') bGeo.addEventListener('click', onGeo);
-
-    const inLogo = document.getElementById('inLogo');
-    if (inLogo && typeof onLogoPick === 'function') inLogo.addEventListener('change', onLogoPick);
-
-  if (typeof renderChecklist === 'function') renderChecklist();
-  if (typeof initSignature === 'function') initSignature();
-
-
-
-/ Pflicht: Checkliste zeichnen
+  // Pflicht: Checkliste zeichnen
   renderChecklist();
 
   // Pflicht: Signatur aktivieren
@@ -709,7 +690,7 @@ window.onGeo = async function onGeo(){
 
 
  })();
-
+   
 
 </script>
 <!-- Optionaler PDF-Hook (leer) -->
