@@ -51,6 +51,22 @@
   white-space: pre-line;  /* behält Zeilenumbrüche aus \n */
   color: #334155;
 }
+.checkpoints {
+  margin: 4px 0 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: pre-line;   /* zeigt \n als Zeilenumbruch */
+  color: #334155;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+}
+textarea.autogrow { height:auto; min-height:64px; overflow:hidden; resize:none; }
+@media (max-width: 720px){
+  .checkpoints { font-size: 12px; }
+  textarea.autogrow { font-size: 12px; line-height: 1.35; }
+}
 
   </style>
 </head>
@@ -536,6 +552,8 @@ function renderChecklist(){
       const card = document.createElement('div');
       card.className = 'card';
       card.innerHTML = `
+      <div class="checkpoints">${it.description || ''}</div>
+
         <div class="row" style="justify-content:space-between">
           <div class="row" style="gap:8px">
             <div style="font-weight:600">${it.title}</div>${it.req?'<span class="chip">Pflicht</span>':''}
@@ -558,20 +576,23 @@ function renderChecklist(){
       host.appendChild(card);
       // Prüfpunkte in das Bemerkungsfeld setzen (nur wenn noch nichts drinsteht)
 const taEl = card.querySelector('textarea');
-const defaultNote = (it.description || ''); // enthält "Prüfe:\n- …"
-const res = state.res[it.id] || (state.res[it.id] = { sev:'', note:'', photos:[] });
+taEl.classList.add('autogrow');
+const res  = state.res[it.id] || (state.res[it.id] = { sev:'', note:'', photos:[] });
 
-if (!res.note || res.note.trim() === '') {
-  taEl.value = defaultNote;
-} else {
-  taEl.value = res.note; // vorhandene Eingabe beibehalten
-}
+// Nur die eigene Notiz des Fahrers laden (KEINE Prüfpunkte mehr hineinschreiben)
+taEl.value = res.note || '';
 
-// Eingaben zurück in den Status schreiben
+// Auto-Grow
+const autosize = (el)=>{ el.style.height='auto'; el.style.height = el.scrollHeight + 'px'; };
+autosize(taEl);
+
+// Persistenz
 taEl.addEventListener('input', (e) => {
   res.note = e.target.value;
+  autosize(taEl);
   try { localStorage.setItem(SKEY, JSON.stringify(state)); } catch {}
 });
+
 
 
       if (!state.res[it.id]) state.res[it.id] = { sev:'', note:'', photos:[] };
