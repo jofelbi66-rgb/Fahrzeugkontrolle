@@ -351,6 +351,9 @@ items.forEach(it => {
   const r = state.res[it.id] || {};
   const status = r.sev || '-';   // <<< NEU: lokale Variable für den PDF-Status
 const sev = status;  // <<< Back-Compat: für alte sev-Verwendungen im PDF
+ const photos = Array.isArray(r.photos) ? r.photos : [];
+const fotos  = photos.length ? `ja (${photos.length})` : '-';
+ 
 
   const desc = (it.description || '').trim();         // unsere Prüfpunkte
 const note = (r.note || '').trim();                 // Fahrer-Bemerkung
