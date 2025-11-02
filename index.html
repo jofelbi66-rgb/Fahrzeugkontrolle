@@ -263,65 +263,69 @@ function buildPdf() {
   y += 2;
 
   
-  // Tabelle
-const colW = { status:28, foto:32, text: pageW - 2*m - 28 - 32 };
-const x    = { status:m, text: m + 28, foto: pageW - m - colW.foto };
+ // Tabelle
+const colW = { status: 28, foto: 32, text: pageW - 2*m - 28 - 32 };
+const x    = { status: m, text: m + 28, foto: pageW - m - colW.foto };
 
-// Zebra + Zeilenhöhen
+// Zebra + Zeilenhöhen + Reserve für Unterschrift
 const zebraA = [255,255,255];
 const zebraB = [248,250,252];
-const ROW_MIN = 10;   // frühere rowMin = 8 -> jetzt etwas luftiger
-const LINE_H  = 5;    // pro umbrochener Textzeile
-const PAD_V   = 6;    // vertikales Padding
+const rowMin = 10;   // früher 8 → etwas luftiger
+const lineH  = 5;    // pro umbrochener Textzeile (früher 4)
+const padV   = 6;    // vertikales Padding (früher 5)
+const reserveForSignature = 70; // Platz lassen (Box + Beschriftung)
 
- 
+// Tabellenkopf
+doc.setDrawColor(200); doc.setFillColor(245,245,245);
+doc.rect(m, y, pageW - 2*m, 8, 'F');
+doc.setFont('helvetica','bold');
+doc.text('Status',    x.status + 2, y + 5);
+doc.text('Checkpoint',x.text   + 2, y + 5);
+doc.text('Foto',      x.foto   + 2, y + 5);
+y += 10;
 
-  doc.setDrawColor(200); doc.setFillColor(245,245,245);
-  doc.rect(m, y, pageW - 2*m, 8, 'F');
-  doc.setFont('helvetica','bold');
-  doc.text('Status',     x.status + 2, y + 5);
-  doc.text('Checkpunkt', x.text   + 2, y + 5);
-  doc.text('Foto',       x.foto   + 2, y + 5);
-  y += 10;
+// Zeilen
+let rowIndex = 0;
+items.forEach(it => {
+  const r = state.res[it.id] || {};
+  const sev   = r.sev || '-';
+  const title = it.title + (r.note ? `\nNotiz: ${r.note}` : '');
+  const fotos = (r.photos && r.photos.length) ? `ja (${r.photos.length})` : '-';
 
-  const rowHmin=10, zebraA=[255,255,255], zebraB=[248,250,252];
-  let rowIndex=0;
+  doc.setFont('helvetica','normal');
+  const wrapped = doc.splitTextToSize(title, colW.text - 4);
+  const rowH = Math.max(rowMin, padV + wrapped.length * lineH);
 
-  items.forEach(it=>{
-    const r = state.res[it.id] || {};
-    const sev = r.sev || '-';
-    const txt = it.title + (r.note ? ('\nNotiz: ' + r.note) : '');
-    const fotos = (r.photos && r.photos.length) ? `ja (${r.photos.length})` : '–';
+  // Seitenumbruch: Platz für Unterschrift reservieren
+  if (y + rowH > pageH - m - reserveForSignature) {
+    doc.addPage();
+    y = m;
 
-    doc.setFont('helvetica','normal');
-    const wrapped = doc.splitTextToSize(txt, colW.text - 4);
-    const lineH = 5;      // Zeilenhöhenfaktor pro umbrochene Textzeile (vorher 4)
-    const padV  = 6;      // vertikales Padding (vorher 5)
-    const rowMin = 10;   // Mindesthöhe pro Tabellenzeile (früher 8)
-    const rowH = Math.max(rowMin, padV + wrapped.length * lineH);
-    
-    // Platz für Unterschrift lassen
-    if (y + rowH > pageH - m - 70) {
-      doc.addPage(); y = m;
-      doc.setDrawColor(200); doc.setFillColor(245,245,245);
-      doc.rect(m, y, pageW - 2*m, 8, 'F');
-      doc.setFont('helvetica','bold');
-      doc.text('Status',     x.status + 2, y + 5);
-      doc.text('Checkpunkt', x.text   + 2, y + 5);
-      doc.text('Foto',       x.foto   + 2, y + 5);
-      y += 10;
-    }
+    // Kopf auf neuer Seite erneut zeichnen
+    doc.setDrawColor(200); doc.setFillColor(245,245,245);
+    doc.rect(m, y, pageW - 2*m, 8, 'F');
+    doc.setFont('helvetica','bold');
+    doc.text('Status',    x.status + 2, y + 5);
+    doc.text('Checkpoint',x.text   + 2, y + 5);
+    doc.text('Foto',      x.foto   + 2, y + 5);
+    y += 10;
+  }
 
-    const bg = (rowIndex++ % 2 === 0) ? zebraA : zebraB;
-    doc.setFillColor(bg[0],bg[1],bg[2]); doc.rect(m, y-1, pageW-2*m, rowH, 'F');
+  // Zebra-Hintergrund
+  const zeb = (rowIndex % 2 === 0) ? zebraA : zebraB;
+  doc.setFillColor(zeb[0], zeb[1], zeb[2]);
+  doc.rect(m, y, pageW - 2*m, rowH, 'F');
 
-    doc.text(`[${sev}]`, x.status+2, y+5);
-    doc.text(wrapped,     x.text  +2, y+5);
-    doc.text(fotos,       x.foto  +2, y+5);
+  // Zelltexte (leicht höher gesetzt für bessere Optik)
+  doc.setTextColor(0,0,0);
+  doc.text(String(sev),       x.status + 2, y + 7);
+  doc.text(wrapped,           x.text   + 2, y + 7);
+  doc.text(String(fotos),     x.foto   + 2, y + 7);
 
-    doc.setDrawColor(230); doc.line(m, y-1+rowH, pageW-m, y-1+rowH);
-    y += rowH + 2;
-  });
+  y += rowH;
+  rowIndex += 1;
+});
+
 
 // Unterschrift
 y += 16; // mehr Abstand von der Tabelle zum Label
