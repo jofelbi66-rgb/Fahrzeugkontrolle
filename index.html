@@ -274,7 +274,7 @@ function buildPdf() {
   doc.text('Foto',       x.foto   + 2, y + 5);
   y += 10;
 
-  const rowHmin=8, zebraA=[255,255,255], zebraB=[248,250,252];
+  const rowHmin=10, zebraA=[255,255,255], zebraB=[248,250,252];
   let rowIndex=0;
 
   items.forEach(it=>{
@@ -285,8 +285,10 @@ function buildPdf() {
 
     doc.setFont('helvetica','normal');
     const wrapped = doc.splitTextToSize(txt, colW.text - 4);
-    const rowH = Math.max(rowHmin, 5 + wrapped.length*4);
-
+    const lineH = 5;      // Zeilenhöhenfaktor pro umbrochene Textzeile (vorher 4)
+    const padV  = 6;      // vertikales Padding (vorher 5)
+    const rowH = Math.max(rowMin, padV + wrapped.length * lineH);
+    
     // Platz für Unterschrift lassen
     if (y + rowH > pageH - m - 70) {
       doc.addPage(); y = m;
@@ -311,7 +313,7 @@ function buildPdf() {
   });
 
 // Unterschrift
-y += 8; // mehr Abstand von der Tabelle zum Label
+y += 16; // mehr Abstand von der Tabelle zum Label
 
 doc.setFont('helvetica', 'bold');
 doc.text('Digitale Unterschrift:', m, y);
