@@ -263,8 +263,18 @@ function buildPdf() {
   y += 2;
 
   // Tabelle
-  const colW = { status:28, foto:32, text: pageW - 2*m - 28 - 32 };
-  const x    = { status:m,  text: m + 28, foto: pageW - m - colW.foto };
+  // Tabelle
+const colW = { status:28, foto:32, text: pageW - 2*m - 28 - 32 };
+const x    = { status:m, text: m + 28, foto: pageW - m - colW.foto };
+
+// Zebra + Zeilenhöhen
+const zebraA = [255,255,255];
+const zebraB = [248,250,252];
+const ROW_MIN = 10;   // frühere rowMin = 8 -> jetzt etwas luftiger
+const LINE_H  = 5;    // pro umbrochener Textzeile
+const PAD_V   = 6;    // vertikales Padding
+
+ 
 
   doc.setDrawColor(200); doc.setFillColor(245,245,245);
   doc.rect(m, y, pageW - 2*m, 8, 'F');
