@@ -553,15 +553,26 @@ async function onMail(){
 
     const payload = { to, cc, bcc, subject, text: bodyText, html, filename, pdfBase64: base64 };
 
-    if (s) s.textContent = 'Sende E-Mail …';
-await fetch(RELAY_URL, {
+if (s) s.textContent = 'Sende E-Mail …';
+
+// kein Preflight: text/plain → Browser sendet direkt; GAS liest e.postData.contents
+const resp = await fetch(RELAY_URL, {
   method: 'POST',
-  mode: 'no-cors',          // CORS umgehen
-  keepalive: true,
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 'Content-Type': 'text/plain;charset=utf-8' },
   body: JSON.stringify(payload)
 });
-if (s) s.textContent = 'Versand angestoßen.';
+
+let ok = false;
+try {
+  const data = await resp.json();   // GAS antwortet mit { ok: true }
+  ok = !!data?.ok;
+} catch (_) {
+  ok = resp.ok;                     // Fallback
+}
+
+if (s) s.textContent = ok ? 'Versandt.' : 'Versand fehlgeschlagen.';
+if (!ok) alert('Fehler beim Versand: Serverantwort nicht OK');
+
 
 
 
