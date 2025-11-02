@@ -507,9 +507,27 @@ async function onMail(){
     const pdfBlob=buildPdf();
     const base64=await blobToBase64(pdfBlob);
 
-    const dt=document.getElementById('inDate')?.value || '';
-    const tr=document.getElementById('inTr')?.value || 'Zug';
-    const tl=document.getElementById('inTl')?.value || 'Aufl';
+  // Stammdaten aus der Maske
+const dt = document.getElementById('inDate')?.value || '';
+const tr = document.getElementById('inTr')?.value || 'Zug';
+const tl = document.getElementById('inTl')?.value || 'Aufl';
+
+// Gesamtstatus für den Betreff (OK > Hinweis > Mangel umgekehrt priorisiert)
+const overallSev =
+  items.some(it => (state.res[it.id]?.sev) === 'Mangel') ? 'Mangel' :
+  items.some(it => (state.res[it.id]?.sev) === 'Hinweis') ? 'Hinweis' : 'OK';
+
+// Betreff zusammenbauen
+const subject = `[Fahrzeugkontrolle] ${overallSev} – ${tr} ${tl}`;
+// Body-Zusammenfassung je Hauptgruppe (Status)
+const lines = [];
+items.forEach(it => {
+  const r   = state.res[it.id] || {};
+  const sev = r.sev || '-';           // <-- sev HIER lokal definiert, kein Fehler mehr
+  lines.push(`${it.title}: ${sev}`);
+});
+const bodyText = lines.join('\n');
+
     const subject=`Fahrzeugkontrolle ${tr} / ${tl}`;
     const filename=`Fahrzeugkontrolle_${tr}_${tl}_${dt}.pdf`.replace(/\s+/g,' ').replace(/[^\wäöüÄÖÜß ._-]/g,'');
 
