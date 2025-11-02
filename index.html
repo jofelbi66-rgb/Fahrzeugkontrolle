@@ -332,13 +332,16 @@ const x    = { status: m, text: m + 28, foto: pageW - m - colW.foto };
 const zebraA = [255,255,255];
 const zebraB = [248,250,252];
 const rowMin = 10;   // früher 8 → etwas luftiger
-const lineH  = 5;    // pro umbrochener Textzeile (früher 4)
-const padV   = 6;    // vertikales Padding (früher 5)
+const lineH  = 4.5;    // pro umbrochener Textzeile (früher 4)
+const padV   = 5;    // vertikales Padding (früher 5)
 const reserveForSignature = 70; // Platz lassen (Box + Beschriftung)
 
 // Tabellenkopf
 doc.setDrawColor(200); doc.setFillColor(245,245,245);
 doc.rect(m, y, pageW - 2*m, 8, 'F');
+ doc.setFontSize(10);  // Tabelleninhalt kompakter
+doc.setFont('helvetica','normal');
+ 
 doc.setFont('helvetica','bold');
 doc.text('Status',    x.status + 2, y + 5);
 doc.text('Checkpoint',x.text   + 2, y + 5);
@@ -559,15 +562,18 @@ async function onMail(){
       pdfBase64: base64
     };
 
-    if (s) s.textContent = 'Sende E-Mail …';
-    const resp = await fetch(RELAY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const ok = resp.ok;
-    if (s) s.textContent = ok ? 'Versandt.' : 'Versand fehlgeschlagen.';
-    if (!ok) alert('Fehler beim Versand: Serverantwort nicht OK');
+if (s) s.textContent = 'Sende E-Mail …';
+await fetch(RELAY_URL, {
+  method: 'POST',
+  mode: 'no-cors',           // CORS-Preflight umgehen
+  keepalive: true,           // auch beim Tab-Schließen senden
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(payload)
+});
+// Bei no-cors kann man den Status nicht auslesen:
+if (s) s.textContent = 'Versand angestoßen.';
+
+ 
   } catch (err){
     console.error(err);
     alert('Fehler beim Versand: ' + (err?.message || err));
