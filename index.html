@@ -698,9 +698,26 @@ window.onGeo = async function onGeo(){
   if (typeof renderChecklist === 'function') renderChecklist();
   if (typeof initSignature === 'function') initSignature();
 
-});          // schließt den DOMContentLoaded-Listener
-})();        // schließt die IIFE (Sofort-ausgeführte Funktion)
+
+
+/ Pflicht: Checkliste zeichnen
+  renderChecklist();
+
+  // Pflicht: Signatur aktivieren
+  initSignature();
+});
+
+
+ })();
+
+
 </script>
-<!-- << END Script-Block -->
+<!-- Optionaler PDF-Hook (leer) -->
+<script>
+  window.patchPdf = function (doc, m, y) {
+    try { /* reserviert */ } catch (e) { console.warn('patchPdf warn:', e); }
+  };
+</script>
+
 </body>
 </html>
