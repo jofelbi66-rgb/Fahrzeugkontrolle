@@ -510,7 +510,7 @@ function onPdf(){
 }
 async function onMail(){
   try{
-    const RELAY_URL = 'https://script.google.com/macros/s/DEINE_WEBAPP_URL/exec';
+    const RELAY_URL = 'https://script.google.com/macros/s/AKfycbzDqGRRy2yfTU0Aj9Lij0SI_0DSREGw-S3CKAGaDHExg5xfHiXNrZPbdLw3iybiJmPx/exec';
     const s = document.getElementById('status'); if (s) s.textContent = 'Erzeuge PDF …';
 
     // PDF erstellen
@@ -554,18 +554,16 @@ async function onMail(){
     const payload = { to, cc, bcc, subject, text: bodyText, html, filename, pdfBase64: base64 };
 
     if (s) s.textContent = 'Sende E-Mail …';
-    // Kein Preflight: text/plain -> Antwort lesbar
-    const resp = await fetch(RELAY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
-    });
+await fetch(RELAY_URL, {
+  method: 'POST',
+  mode: 'no-cors',          // CORS umgehen
+  keepalive: true,
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(payload)
+});
+if (s) s.textContent = 'Versand angestoßen.';
 
-    let ok = false;
-    try { const data = await resp.json(); ok = !!(data && data.ok); } catch(_) { ok = resp.ok; }
 
-    if (s) s.textContent = ok ? 'Versandt.' : 'Versand fehlgeschlagen.';
-    if (!ok) alert('Fehler beim Versand: Serverantwort nicht OK');
 
   } catch (err){
     console.error(err);
