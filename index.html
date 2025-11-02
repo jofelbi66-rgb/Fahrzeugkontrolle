@@ -507,7 +507,8 @@ card.className = 'card';
 
 card.innerHTML = `
   <label class="row">
-    <input type="file" accept="image/*" capture="environment"
+    <input type="file"accept="image/png,image/jpeg,image/webp"
+  capture="environment"
            style="display:block;margin-top:6px">
   </label>
   <div class="photos" id="ph_${it.id}"></div>
@@ -698,9 +699,10 @@ window.onGeo = async function onGeo(){
 
     if (typeof renderChecklist === 'function') renderChecklist();
     if (typeof initSignature === 'function')   initSignature();
-});
-})();  // diese Zeile ergänzt genau, was dein Scanner gemeldet hat
-  */
+    });
+  }); // Ende DOMContentLoaded
+})(); // Ende IIFE
 </script>
+<!-- << END Script-Block -->
 </body>
 </html>
