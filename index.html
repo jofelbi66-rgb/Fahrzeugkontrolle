@@ -696,11 +696,15 @@ window.onGeo = async function onGeo(){
 
     const inLogo = document.getElementById('inLogo');
     if (inLogo && typeof onLogoPick === 'function') inLogo.addEventListener('change', onLogoPick);
-if (typeof renderChecklist === 'function') renderChecklist();
-if (typeof initSignature === 'function') initSignature();
 
-});      // schließt den DOMContentLoaded-Handler
-})();    // schließt die IIFE
+<script>
+/* … dein Code darüber … */
+
+  if (typeof renderChecklist === 'function') renderChecklist();
+  if (typeof initSignature === 'function') initSignature();
+
+});          // schließt den DOMContentLoaded-Listener
+})();        // schließt die IIFE (Sofort-ausgeführte Funktion)
 </script>
 <!-- << END Script-Block -->
 </body>
