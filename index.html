@@ -696,12 +696,11 @@ window.onGeo = async function onGeo(){
 
     const inLogo = document.getElementById('inLogo');
     if (inLogo && typeof onLogoPick === 'function') inLogo.addEventListener('change', onLogoPick);
+if (typeof renderChecklist === 'function') renderChecklist();
+if (typeof initSignature === 'function') initSignature();
 
-    if (typeof renderChecklist === 'function') renderChecklist();
-    if (typeof initSignature === 'function')   initSignature();
-    });
-  }); // Ende DOMContentLoaded
-})(); // Ende IIFE
+});      // schließt den DOMContentLoaded-Handler
+})();    // schließt die IIFE
 </script>
 <!-- << END Script-Block -->
 </body>
