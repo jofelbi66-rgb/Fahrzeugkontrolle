@@ -510,35 +510,35 @@ function onPdf(){
 }
 async function onMail(){
   try{
-    const RELAY_URL = 'https://script.google.com/macros/s/AKfycbzDqGRRy2yfTU0Aj9Lij0SI_0DSREGw-S3CKAGaDHExg5xfHiXNrZPbdLw3iybiJmPx/exec';
+    const RELAY_URL = 'https://script.google.com/macros/s/DEINE_WEBAPP_URL/exec';
     const s = document.getElementById('status'); if (s) s.textContent = 'Erzeuge PDF …';
-`´
-    // PDF erzeugen + in Base64 umwandeln
-    const pdfBlob  = buildPdf();
-    const base64   = await blobToBase64(pdfBlob);
 
-    // Stammdaten aus der Maske
+    // PDF erstellen
+    const pdfBlob = buildPdf();
+    const base64  = await blobToBase64(pdfBlob);
+
+    // Stammdaten
     const dt = document.getElementById('inDate')?.value || '';
     const tr = document.getElementById('inTr')  ?.value || 'Zug';
     const tl = document.getElementById('inTl')  ?.value || 'Aufl';
 
-    // Gesamtstatus für den Betreff (Priorität: Mangel > Hinweis > OK)
+    // Gesamtstatus (Mangel > Hinweis > OK)
     const overallSev =
-      items.some(it => (state.res[it.id]?.sev) === 'Mangel')  ? 'Mangel' :
-      items.some(it => (state.res[it.id]?.sev) === 'Hinweis') ? 'Hinweis' : 'OK';
+      (items.some(it => (state.res[it.id]?.sev) === 'Mangel'))  ? 'Mangel' :
+      (items.some(it => (state.res[it.id]?.sev) === 'Hinweis')) ? 'Hinweis' : 'OK';
 
-    // Betreff
-    const subject = `[Fahrzeugkontrolle] ${overallSev} – ${tr} ${tl}`;
+    // Betreff OHNE Backticks
+    const subject = '[Fahrzeugkontrolle] ' + overallSev + ' \u2013 ' + tr + ' ' + tl;
 
-    // Body: je Hauptgruppe Status – OHNE 'sev'-Variable
-    const lines = items.map(it => {
+    // Body je Hauptgruppe OHNE Backticks
+    const lines = items.map(function(it){
       const status = (state.res[it.id]?.sev) || '-';
-      return `${it.title}: ${status}`;
+      return it.title + ': ' + status;
     });
     const bodyText = lines.join('\n');
 
-    // Dateiname
-    const filename = `Fahrzeugkontrolle_${tr}_${tl}_${dt}.pdf`
+    // Dateiname OHNE Backticks
+    const filename = ('Fahrzeugkontrolle_' + tr + '_' + tl + '_' + dt + '.pdf')
       .replace(/\s+/g,' ')
       .replace(/[^-\wäöüÄÖÜß_.-]/g,'');
 
@@ -547,57 +547,33 @@ async function onMail(){
     const cc  = (document.getElementById('inCc') ?.value || '').trim();
     const bcc = (document.getElementById('inBcc')?.value || '').trim();
 
-    // HTML-Body aus Text ableiten (sicher escapen)
+    // HTML aus Text (escapen)
     const html = '<div>' + bodyText
-      .replace(/&/g,'&amp;')
-      .replace(/</g,'&lt;')
-      .replace(/\n/g,'<br>') + '</div>';
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>') + '</div>';
 
-    const payload = {
-      to, cc, bcc,
-      subject,
-      text: bodyText,
-      html,
-      filename,
-      pdfBase64: base64
-    };
+    const payload = { to, cc, bcc, subject, text: bodyText, html, filename, pdfBase64: base64 };
 
-if (s) s.textContent = 'Sende E-Mail …';
-await fetch(RELAY_URL, {
-  method: 'POST',
-  mode: 'no-cors',           // CORS-Preflight umgehen
-  keepalive: true,           // auch beim Tab-Schließen senden
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(payload)
-});
-if (s) s.textContent = 'Sende E-Mail …';
+    if (s) s.textContent = 'Sende E-Mail …';
+    // Kein Preflight: text/plain -> Antwort lesbar
+    const resp = await fetch(RELAY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
 
-// WICHTIG: text/plain vermeidet Preflight → keine CORS-Blockade
-const resp = await fetch(RELAY_URL, {
-  method: 'POST',
-  headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-  body: JSON.stringify(payload)        // GAS liest e.postData.contents
-});
+    let ok = false;
+    try { const data = await resp.json(); ok = !!(data && data.ok); } catch(_) { ok = resp.ok; }
 
-let ok = false;
-try {
-  const data = await resp.json();      // GAS antwortet mit JSON { ok: true }
-  ok = !!data?.ok;
-} catch (_) {
-  ok = resp.ok;                        // Fallback
-}
+    if (s) s.textContent = ok ? 'Versandt.' : 'Versand fehlgeschlagen.';
+    if (!ok) alert('Fehler beim Versand: Serverantwort nicht OK');
 
-if (s) s.textContent = ok ? 'Versandt.' : 'Versand fehlgeschlagen.';
-if (!ok) alert('Fehler beim Versand: Serverantwort nicht OK');
-
-
- 
   } catch (err){
     console.error(err);
     alert('Fehler beim Versand: ' + (err?.message || err));
     const s = document.getElementById('status'); if (s) s.textContent = '';
   }
 }
+
 
 // === CHECKLISTE + HILFSFUNKTIONEN ===
 function renderChecklist(){
