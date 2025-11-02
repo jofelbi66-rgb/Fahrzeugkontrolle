@@ -44,6 +44,14 @@
     .x{position:absolute;right:4px;top:4px;width:22px;height:22px;border-radius:11px;border:1px solid var(--b);background:#fff;cursor:pointer;line-height:20px;text-align:center;font-size:14px}
     footer{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--b)}
     .help{font-size:12px;color:#475569}
+    .item-desc {
+  margin: 4px 0 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: pre-line;  /* behält Zeilenumbrüche aus \n */
+  color: #334155;
+}
+
   </style>
 </head>
 <body>
@@ -139,6 +147,7 @@ const items = [
   {
     id: "docs",
     title: "Allgemeine Vorbereitung & Dokumentation",
+    
     description:
       "Prüfe:\n- Vollständigkeit der Transportdokumente (Beladegutachten, Frachtbrief, Genehmigungen)\n- Eintragungen und Zeitplan für den Transport\n- Lesbarkeit und Aktualität aller Unterlagen\n- Gültigkeit der Fahrerlaubnis und Fahrzeugpapiere",
     category: "Dokumentation"
@@ -146,6 +155,7 @@ const items = [
   {
     id: "vehicle",
     title: "Fahrzeugtechnische Kontrolle",
+    
     description:
       "Prüfe:\n- Zustand und Funktion von Bremsanlage und Hydrauliksystem\n- Beleuchtung, Rundumkennleuchten und Signaltechnik\n- Dichtheit (keine Öl- oder Hydrauliklecks)\n- Vorhandensein von Ölbindemittel / Auffangwannen\n- Reifen, Felgen und Radmuttern auf festen Sitz",
     category: "Fahrzeug"
@@ -153,6 +163,7 @@ const items = [
   {
     id: "load",
     title: "Ladung & Ladehilfsmittel",
+    
     description:
       "Prüfe:\n- Ladung form- und kraftschlüssig gesichert\n- Ladehilfsmittel und Zubehör (Ketten, Traversen, Balken) fixiert\n- Zustand und Zulassung der Zurrmittel\n- Ladefläche frei von Restladung, Schmutz und Öl",
     category: "Ladung"
@@ -160,18 +171,26 @@ const items = [
   {
     id: "environment",
     title: "Umwelt- & Leckageschutz",
-    description:
+    
+     description:
       "Prüfe:\n- Keine Leckagen an Hydraulik, Motor oder Getriebe\n- Öl- und Kraftstoffbehälter dicht\n- Auffangsysteme korrekt positioniert und leer\n- Keine Flüssigkeiten auf der Ladefläche oder im Umfeld\n- Umweltgefährdende Stoffe ordnungsgemäß gesichert",
     category: "Umwelt"
   },
   {
     id: "safety",
     title: "Umfeld & Arbeitssicherheit",
+   
     description:
       "Prüfe:\n- Umgebung frei von Hindernissen und Stolperstellen\n- PSA (Helm, Warnweste, Handschuhe) vollständig getragen\n- Funk-/Sichtverbindung zum Einweiser vorhanden\n- Fahrweg und Wendeflächen kontrolliert\n- Beleuchtung der Arbeitsumgebung ausreichend",
     category: "Sicherheit"
   }
 ];
+// Schritt C – Beschreibungen in Platzhalter schreiben
+const mapById = Object.fromEntries(items.map(it => [it.id, it]));
+document.querySelectorAll('.item-desc').forEach(el => {
+  const id = el.dataset.id;
+  el.textContent = mapById[id]?.description || '';
+});
     
 // --- DIAGNOSE START ---
 console.log('[INIT] Script geladen');
@@ -719,6 +738,16 @@ if (inLogo && typeof window.onLogoPick === 'function') {
 
   // Pflicht: Checkliste zeichnen
   renderChecklist();
+  // Nach dem Zeichnen der Checkliste: Unterpunkte ergänzen
+setTimeout(() => {
+  const mapById = Object.fromEntries(items.map(it => [it.id, it]));
+  document.querySelectorAll('.item-desc').forEach(el => {
+    const id = el.dataset.id;
+    el.textContent = mapById[id]?.description || '';
+  });
+  console.log('[INFO] Unterpunkte ergänzt');
+}, 500);
+
 
   // Pflicht: Signatur aktivieren
   initSignature();
