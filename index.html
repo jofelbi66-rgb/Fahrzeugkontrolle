@@ -537,6 +537,8 @@ function renderChecklist(){
           <div class="row" style="gap:8px">
             <div style="font-weight:600">${it.title}</div>${it.req?'<span class="chip">Pflicht</span>':''}
           </div>
+          <p class="item-desc" style="margin:4px 0 8px;font-size:12px;line-height:1.4;white-space:pre-line;color:#334155;">${it.description || ''}</p>
+
           <div class="row">
             <button class="btn" data-sev="OK">OK</button>
             <button class="btn" data-sev="Hinweis">Hinweis</button>
