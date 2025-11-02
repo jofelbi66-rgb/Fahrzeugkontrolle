@@ -134,19 +134,45 @@
     let state = JSON.parse(localStorage.getItem(SKEY) || '{}');
     state.res=state.res||{}; state.geo=state.geo||null; state.logo=state.logo||null; state.logoAspect=state.logoAspect||1; state.lockRecipients=true;
 
-    const items = [
-      {id:'h1', sec:'Hydraulik & Schläuche', title:'Hydraulik-Kupplungen verriegelt & dicht', req:1},
-      {id:'h2', sec:'Hydraulik & Schläuche', title:'Schläuche ohne Scheuer-/Knickstellen', req:1},
-      {id:'h3', sec:'Hydraulik & Schläuche', title:'Druck-/Funktionsprobe ohne Auffälligkeiten', req:1},
-      {id:'l1', sec:'Leckagen / Austritte',  title:'Kein Ölfilm an Verbindern/Flanschen', req:1},
-      {id:'l2', sec:'Leckagen / Austritte',  title:'Keine Tropfenbildung / keine Pfützen', req:1},
-      {id:'f1', sec:'Fahrzeug allgemein',    title:'Beleuchtung komplett i. O.', req:1},
-      {id:'f2', sec:'Fahrzeug allgemein',    title:'Reifen/Felgen i. O.', req:1},
-      {id:'f3', sec:'Fahrzeug allgemein',    title:'Bremsprobe bestanden', req:1},
-      {id:'f4', sec:'Fahrzeug allgemein',    title:'Ladungssicherung plausibel', req:1},
-      {id:'m1', sec:'Umweltschutz',          title:'Mobile Auffangmatten vorhanden & einsatzbereit', req:1}
-    ];
-
+// NEU: 5 Hauptgruppen (alten items-Array komplett ersetzen)
+const items = [
+  {
+    id: "docs",
+    title: "Allgemeine Vorbereitung & Dokumentation",
+    description:
+      "Prüfe:\n- Vollständigkeit der Transportdokumente (Beladegutachten, Frachtbrief, Genehmigungen)\n- Eintragungen und Zeitplan für den Transport\n- Lesbarkeit und Aktualität aller Unterlagen\n- Gültigkeit der Fahrerlaubnis und Fahrzeugpapiere",
+    category: "Dokumentation"
+  },
+  {
+    id: "vehicle",
+    title: "Fahrzeugtechnische Kontrolle",
+    description:
+      "Prüfe:\n- Zustand und Funktion von Bremsanlage und Hydrauliksystem\n- Beleuchtung, Rundumkennleuchten und Signaltechnik\n- Dichtheit (keine Öl- oder Hydrauliklecks)\n- Vorhandensein von Ölbindemittel / Auffangwannen\n- Reifen, Felgen und Radmuttern auf festen Sitz",
+    category: "Fahrzeug"
+  },
+  {
+    id: "load",
+    title: "Ladung & Ladehilfsmittel",
+    description:
+      "Prüfe:\n- Ladung form- und kraftschlüssig gesichert\n- Ladehilfsmittel und Zubehör (Ketten, Traversen, Balken) fixiert\n- Zustand und Zulassung der Zurrmittel\n- Ladefläche frei von Restladung, Schmutz und Öl",
+    category: "Ladung"
+  },
+  {
+    id: "environment",
+    title: "Umwelt- & Leckageschutz",
+    description:
+      "Prüfe:\n- Keine Leckagen an Hydraulik, Motor oder Getriebe\n- Öl- und Kraftstoffbehälter dicht\n- Auffangsysteme korrekt positioniert und leer\n- Keine Flüssigkeiten auf der Ladefläche oder im Umfeld\n- Umweltgefährdende Stoffe ordnungsgemäß gesichert",
+    category: "Umwelt"
+  },
+  {
+    id: "safety",
+    title: "Umfeld & Arbeitssicherheit",
+    description:
+      "Prüfe:\n- Umgebung frei von Hindernissen und Stolperstellen\n- PSA (Helm, Warnweste, Handschuhe) vollständig getragen\n- Funk-/Sichtverbindung zum Einweiser vorhanden\n- Fahrweg und Wendeflächen kontrolliert\n- Beleuchtung der Arbeitsumgebung ausreichend",
+    category: "Sicherheit"
+  }
+];
+    
 // --- DIAGNOSE START ---
 console.log('[INIT] Script geladen');
 window.addEventListener('DOMContentLoaded', ()=>{
