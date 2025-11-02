@@ -262,7 +262,7 @@ function buildPdf() {
   if (state.geo) line(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
   y += 2;
 
-  // Tabelle
+  
   // Tabelle
 const colW = { status:28, foto:32, text: pageW - 2*m - 28 - 32 };
 const x    = { status:m, text: m + 28, foto: pageW - m - colW.foto };
@@ -297,6 +297,7 @@ const PAD_V   = 6;    // vertikales Padding
     const wrapped = doc.splitTextToSize(txt, colW.text - 4);
     const lineH = 5;      // Zeilenhöhenfaktor pro umbrochene Textzeile (vorher 4)
     const padV  = 6;      // vertikales Padding (vorher 5)
+    const rowMin = 10;   // Mindesthöhe pro Tabellenzeile (früher 8)
     const rowH = Math.max(rowMin, padV + wrapped.length * lineH);
     
     // Platz für Unterschrift lassen
