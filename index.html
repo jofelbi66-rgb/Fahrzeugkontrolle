@@ -510,9 +510,9 @@ function onPdf(){
 }
 async function onMail(){
   try{
-    const RELAY_URL = 'https://script.google.com/macros/s/AKfycbwNt85E1m00CkLo2U5wI8hCK5C2Z2u0s2Mb4x__sw7nXkGtk1nwXnYvXsRyv8CUDlsc/exec';
+    const RELAY_URL = 'https://script.google.com/macros/s/AKfycbzDqGRRy2yfTU0Aj9Lij0SI_0DSREGw-S3CKAGaDHExg5xfHiXNrZPbdLw3iybiJmPx/exec';
     const s = document.getElementById('status'); if (s) s.textContent = 'Erzeuge PDF …';
-
+`´
     // PDF erzeugen + in Base64 umwandeln
     const pdfBlob  = buildPdf();
     const base64   = await blobToBase64(pdfBlob);
@@ -570,8 +570,26 @@ await fetch(RELAY_URL, {
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify(payload)
 });
-// Bei no-cors kann man den Status nicht auslesen:
-if (s) s.textContent = 'Versand angestoßen.';
+if (s) s.textContent = 'Sende E-Mail …';
+
+// WICHTIG: text/plain vermeidet Preflight → keine CORS-Blockade
+const resp = await fetch(RELAY_URL, {
+  method: 'POST',
+  headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+  body: JSON.stringify(payload)        // GAS liest e.postData.contents
+});
+
+let ok = false;
+try {
+  const data = await resp.json();      // GAS antwortet mit JSON { ok: true }
+  ok = !!data?.ok;
+} catch (_) {
+  ok = resp.ok;                        // Fallback
+}
+
+if (s) s.textContent = ok ? 'Versandt.' : 'Versand fehlgeschlagen.';
+if (!ok) alert('Fehler beim Versand: Serverantwort nicht OK');
+
 
  
   } catch (err){
