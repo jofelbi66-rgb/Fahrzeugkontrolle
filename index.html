@@ -557,18 +557,18 @@ function renderChecklist(){
       `;
       host.appendChild(card);
       // Prüfpunkte in das Bemerkungsfeld setzen (nur wenn noch nichts drinsteht)
-const ta = card.querySelector('textarea');
+const taEl = card.querySelector('textarea');
 const defaultNote = (it.description || ''); // enthält "Prüfe:\n- …"
 const res = state.res[it.id] || (state.res[it.id] = { sev:'', note:'', photos:[] });
 
 if (!res.note || res.note.trim() === '') {
-  ta.value = defaultNote;
+  taEl.value = defaultNote;
 } else {
-  ta.value = res.note; // vorhandene Eingabe beibehalten
+  taEl.value = res.note; // vorhandene Eingabe beibehalten
 }
 
 // Eingaben zurück in den Status schreiben
-ta.addEventListener('input', (e) => {
+taEl.addEventListener('input', (e) => {
   res.note = e.target.value;
   try { localStorage.setItem(SKEY, JSON.stringify(state)); } catch {}
 });
@@ -590,9 +590,9 @@ ta.addEventListener('input', (e) => {
       });
 
       // Notiz
-      const ta = card.querySelector('textarea');
-      ta.value = state.res[it.id].note||'';
-      ta.oninput = ()=>{ state.res[it.id].note = ta.value; localStorage.setItem(SKEY, JSON.stringify(state)); };
+      const taEl = card.querySelector('textarea');
+      taEl.value = state.res[it.id].note||'';
+      taEl.oninput = ()=>{ state.res[it.id].note = ta.value; localStorage.setItem(SKEY, JSON.stringify(state)); };
 
       // Foto
       const fi = card.querySelector('input[type=file]');
