@@ -333,12 +333,15 @@ y += 10;
 let rowIndex = 0;
 items.forEach(it => {
   const r = state.res[it.id] || {};
-  const sev   = r.sev || '-';
-  const title = it.title + (r.note ? `\nNotiz: ${r.note}` : '');
-  const fotos = (r.photos && r.photos.length) ? `ja (${r.photos.length})` : '-';
+  const desc = (it.description || '').trim();         // unsere Prüfpunkte
+const note = (r.note || '').trim();                 // Fahrer-Bemerkung
+
+// Titel + Prüfpunkte immer ausgeben, Hinweis nur bei abweichender Eingabe
+const base = it.title + (desc ? `\n${desc}` : '');
+const txt  = base + (note && note !== desc ? `\nHinweis: ${note}` : '');
 
   doc.setFont('helvetica','normal');
-  const wrapped = doc.splitTextToSize(title, colW.text - 4);
+  const wrapped = doc.splitTextToSize(txt, colW.text - 4);
   const rowH = Math.max(rowMin, padV + wrapped.length * lineH);
 
   // Seitenumbruch: Platz für Unterschrift reservieren
@@ -553,6 +556,23 @@ function renderChecklist(){
         <div class="photos" id="ph_${it.id}"></div>
       `;
       host.appendChild(card);
+      // Prüfpunkte in das Bemerkungsfeld setzen (nur wenn noch nichts drinsteht)
+const ta = card.querySelector('textarea');
+const defaultNote = (it.description || ''); // enthält "Prüfe:\n- …"
+const res = state.res[it.id] || (state.res[it.id] = { sev:'', note:'', photos:[] });
+
+if (!res.note || res.note.trim() === '') {
+  ta.value = defaultNote;
+} else {
+  ta.value = res.note; // vorhandene Eingabe beibehalten
+}
+
+// Eingaben zurück in den Status schreiben
+ta.addEventListener('input', (e) => {
+  res.note = e.target.value;
+  try { localStorage.setItem(SKEY, JSON.stringify(state)); } catch {}
+});
+
 
       if (!state.res[it.id]) state.res[it.id] = { sev:'', note:'', photos:[] };
 
