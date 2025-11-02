@@ -507,14 +507,12 @@ card.className = 'card';
 
 card.innerHTML = `
   <label class="row">
-    <input type="file"accept="image/png,image/jpeg,image/webp"
-  capture="environment"
-           style="display:block;margin-top:6px">
+    <input type="file" accept="image/*" capture="environment" style="display:block;margin-top:6px">
   </label>
   <div class="photos" id="ph_${it.id}"></div>
-`; // <-- WICHTIG: schließender Backtick + Semikolon
-
+`; // <— Backtick + Semikolon
 host.appendChild(card);
+
 
 
       if (!state.res[it.id]) state.res[it.id] = { sev:'', note:'', photos:[] };
@@ -696,9 +694,6 @@ window.onGeo = async function onGeo(){
 
     const inLogo = document.getElementById('inLogo');
     if (inLogo && typeof onLogoPick === 'function') inLogo.addEventListener('change', onLogoPick);
-
-<script>
-/* … dein Code darüber … */
 
   if (typeof renderChecklist === 'function') renderChecklist();
   if (typeof initSignature === 'function') initSignature();
