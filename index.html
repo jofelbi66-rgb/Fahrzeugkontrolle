@@ -589,11 +589,8 @@ taEl.addEventListener('input', (e) => {
         b.onclick = ()=>{ state.res[it.id].sev=b.dataset.sev; mark(b.dataset.sev); localStorage.setItem(SKEY, JSON.stringify(state)); };
       });
 
-      // Notiz
-      const taEl = card.querySelector('textarea');
-      taEl.value = state.res[it.id].note||'';
-      taEl.oninput = ()=>{ state.res[it.id].note = ta.value; localStorage.setItem(SKEY, JSON.stringify(state)); };
-
+   
+     
       // Foto
       const fi = card.querySelector('input[type=file]');
       fi.onchange = async e=>{
