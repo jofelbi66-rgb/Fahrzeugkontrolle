@@ -528,19 +528,22 @@ items.forEach(it => {
 });
 const bodyText = lines.join('\n');
 
-    const subject=`Fahrzeugkontrolle ${tr} / ${tl}`;
     const filename=`Fahrzeugkontrolle_${tr}_${tl}_${dt}.pdf`.replace(/\s+/g,' ').replace(/[^\wäöüÄÖÜß ._-]/g,'');
 
-    const payload={
-      to:'Dispo-Memmingen@felbermayr.cc',
-      cc:(document.getElementById('inCc')?.value||'').trim(),
-      bcc:(document.getElementById('inBcc')?.value||'').trim(),
-      subject,
-      text:'Fahrzeugkontrolle – Schwerlast/Zugmaschine',
-      html:'<div>Fahrzeugkontrolle – Schwerlast/Zugmaschine</div>',
-      filename,
-      pdfBase64: base64
-    };
+   const payload = {
+  to:  'Dispo-Memmingen@felbermayr.cc',
+  cc:  (document.getElementById('inCc') ?.value || '').trim(),
+  bcc: (document.getElementById('inBcc')?.value || '').trim(),
+  subject,                 // kommt von oben: "[Fahrzeugkontrolle] <OK/Hinweis/Mangel> – <Zug> <Aufl>"
+  text: bodyText,          // kommt von oben: aus items.forEach(...) zusammengebaut
+  html: '<div>' + bodyText
+            .replace(/&/g,'&amp;')
+            .replace(/</g,'&lt;')
+            .replace(/\n/g,'<br>') + '</div>',
+  filename,                // z. B. "Fahrzeugkontrolle_Zug_Aufl_2025-11-02.pdf"
+  pdfBase64: base64        // dein erzeugtes PDF
+};
+
 
     if(s) s.textContent='Sende über Relay …';
     await fetch(RELAY_URL, {
