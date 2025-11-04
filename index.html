@@ -67,6 +67,86 @@ textarea.autogrow { height:auto; min-height:64px; overflow:hidden; resize:none; 
   .checkpoints { font-size: 12px; }
   textarea.autogrow { font-size: 12px; line-height: 1.35; }
 }
+/* Grundlayout der Checkkarten */
+.card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 2px rgba(15,23,42,0.08);
+  border: 1px solid #e5e7eb;
+}
+
+/* Zeilen innerhalb der Karte */
+.card .row {
+  display: flex;
+  align-items: center;
+}
+
+/* Fester Prüfpunkte-Block */
+.checkpoints{
+  margin: 4px 0 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: pre-line;
+  color: #334155;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+/* Buttons OK / Hinweis / Mangel – kompakt */
+.card .btn {
+  flex: 1 1 0;
+  font-size: 13px;
+  padding: 6px 4px;
+  border-radius: 999px;
+}
+
+/* Kommentarfeld */
+textarea.autogrow{
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.4;
+  min-height: 60px;
+  resize: none;
+  border-radius: 8px;
+  border: 1px solid #cbd5f5;
+  padding: 6px 8px;
+}
+
+/* Fotos-Container */
+.photos{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+.photos img{
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+/* Mobile-Optimierung */
+@media (max-width: 720px){
+  .card{
+    padding: 8px 10px;
+    margin-bottom: 8px;
+  }
+  .checkpoints{
+    font-size: 12px;
+  }
+  textarea.autogrow{
+    font-size: 12px;
+    line-height: 1.35;
+  }
+}
 
   </style>
 </head>
