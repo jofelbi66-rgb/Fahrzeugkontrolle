@@ -232,6 +232,29 @@ textarea.autogrow{
 
   <script>
   (function(){
+    function formatNowForDisplay(){
+  const now   = new Date();
+  const yyyy  = now.getFullYear();
+  const mm    = String(now.getMonth() + 1).padStart(2, '0');
+  const dd    = String(now.getDate()).padStart(2, '0');
+  const hh    = String(now.getHours()).padStart(2, '0');
+  const mi    = String(now.getMinutes()).padStart(2, '0');
+  // Deutsche Schreibweise inkl. Uhrzeit
+  return `${dd}.${mm}.${yyyy} ${hh}:${mi}`;
+}
+// Datum + Uhrzeit formatiert (deutsches Format)
+function formatNowForDisplay() {
+  const now   = new Date();
+  const yyyy  = now.getFullYear();
+  const mm    = String(now.getMonth() + 1).padStart(2, '0');
+  const dd    = String(now.getDate()).padStart(2, '0');
+  const hh    = String(now.getHours()).padStart(2, '0');
+  const mi    = String(now.getMinutes()).padStart(2, '0');
+  return `${dd}.${mm}.${yyyy} ${hh}:${mi}`;
+}
+
+
+    
     const { jsPDF } = window.jspdf;
     const $ = s => document.querySelector(s);
     const SKEY='fahrzeugkontrolle_pages_single';
@@ -375,6 +398,9 @@ function initSignature(){
 function buildPdf() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit:'mm', format:'a4', compress:true });
+    const dateField = document.getElementById('inDate');
+  const dtDisplay = dateField && dateField.value ? dateField.value : formatNowForDisplay();
+
 
   const m = 14;
   const pageW = doc.internal.pageSize.getWidth();
@@ -927,51 +953,51 @@ setTimeout(() => {
 
   // Pflicht: Signatur aktivieren
   initSignature();
-   // Fahrername merken & beim Start automatisch einfügen
-  const driverField =
+   // Fahrerfeld automatisch finden
+  let driverField =
     document.getElementById('inDriver') ||
     document.getElementById('inFr') ||
-    document.querySelector('input[placeholder*="Fahrer"], input[aria-label*="Fahrer"]');
+    document.getElementById('inFahrer') ||
+    (() => {
+      // Fallback: Label mit "Fahrer" suchen
+      const label = Array.from(document.querySelectorAll('label'))
+        .find(l => /fahrer/i.test(l.textContent));
+      if (!label) return null;
+
+      const forId = label.getAttribute('for');
+      if (forId) {
+        const el = document.getElementById(forId);
+        if (el) return el;
+      }
+
+      // Falls kein "for" gesetzt ist: erstes Input/Textfeld im selben Container
+      return label.parentElement.querySelector('input,textarea');
+    })();
+
+  console.log('[INIT] Fahrerfeld:', driverField);
 
   if (driverField) {
-    console.log('[INIT] Fahrerfeld gefunden mit id:', driverField.id);
-
+    // Gespeicherten Namen beim Laden setzen
     const savedDriver = localStorage.getItem('driverName');
     if (savedDriver) {
       driverField.value = savedDriver;
     }
 
+    // Bei jeder Änderung den Namen speichern
     driverField.addEventListener('input', e => {
       localStorage.setItem('driverName', e.target.value.trim());
     });
   } else {
-    console.warn('[INIT] Kein Fahrer-Eingabefeld gefunden – bitte ID prüfen.');
+    console.warn('[INIT] Kein Fahrer-Eingabefeld gefunden – bitte Markup prüfen.');
   }
-
   // Datum + Uhrzeit automatisch setzen (nur wenn Feld leer ist)
   const dateField = document.getElementById('inDate');
   if (dateField && !dateField.value) {
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm   = String(now.getMonth() + 1).padStart(2, '0');
-    const dd   = String(now.getDate()).padStart(2, '0');
-    const hh   = String(now.getHours()).padStart(2, '0');
-    const mi   = String(now.getMinutes()).padStart(2, '0');
-
-    // Je nach Feldtyp passend setzen
-    if (dateField.type === 'datetime-local') {
-      // HTML5 datetime-local: 2025-11-04T14:30
-      dateField.value = `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
-    } else if (dateField.type === 'date') {
-      // Nur Datum: 2025-11-04
-      dateField.value = `${yyyy}-${mm}-${dd}`;
-    } else {
-      // Textfeld → deutsches Format mit Uhrzeit
-      dateField.value = `${dd}.${mm}.${yyyy} ${hh}:${mi}`;
-    }
-
-    console.log('[INIT] Datum/Uhrzeit gesetzt auf:', dateField.value, 'Typ:', dateField.type);
+    dateField.value = formatNowForDisplay();
+    console.log('[INIT] Datum/Uhrzeit gesetzt auf:', dateField.value);
   }
+
+ 
   
 
 });   // Ende DOMContentLoaded
