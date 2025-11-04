@@ -958,7 +958,15 @@ initSignature();
 // Fahrername merken & beim Start automatisch einfügen
 const driverField = document.getElementById('inOp');
 if (driverField) {
-  const savedDriver = localStorage.getItem('driverName');
+  let savedDriver = localStorage.getItem('driverName');
+
+  // alten Zeitstempel-Müll ignorieren (z.B. 2025-11-04T07:30)
+  if (savedDriver && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(savedDriver)) {
+    console.warn('[INIT] driverName im localStorage war ein Datum, wird verworfen:', savedDriver);
+    localStorage.removeItem('driverName');
+    savedDriver = null;
+  }
+
   if (savedDriver) {
     driverField.value = savedDriver;
   }
@@ -966,10 +974,12 @@ if (driverField) {
   driverField.addEventListener('input', e => {
     localStorage.setItem('driverName', e.target.value.trim());
   });
+
   console.log('[INIT] Fahrerfeld gefunden:', driverField);
 } else {
   console.warn('[INIT] Kein Fahrer-Eingabefeld mit ID "inOp" gefunden!');
 }
+
 
 // Datum + Uhrzeit bei jedem Start auf "jetzt" setzen
 const dateField = document.getElementById('inDate');
