@@ -828,27 +828,26 @@ const payload = {
   overallSev      // den hast du weiter oben schon berechnet
 };
 
-
 if (s) s.textContent = 'Sende E-Mail …';
 
-// kein Preflight: text/plain → Browser sendet direkt; GAS liest e.postData.contents
-const resp = await fetch(RELAY_URL, {
-  method: 'POST',
-  headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-  body: JSON.stringify(payload)
-});
-
-let ok = false;
 try {
-  const data = await resp.json();   // GAS antwortet mit { ok: true }
-  ok = !!data?.ok;
-} catch (_) {
-  ok = resp.ok;                     // Fallback
+  await fetch(RELAY_URL, {
+    method: 'POST',
+    mode: 'no-cors', // wichtig: keine CORS-Probleme, Antwort wird nicht ausgewertet
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload),
+  });
+
+  // Wenn kein Fehler geflogen ist, betrachten wir den Versand als angestoßen
+  if (s) s.textContent = 'Versand angestoßen.';
+
+} catch (err) {
+  console.error(err);
+  alert('Fehler beim Versand: ' + (err?.message || err));
+
+  const s = document.getElementById('status');
+  if (s) s.textContent = '';
 }
-
-if (s) s.textContent = ok ? 'Versandt.' : 'Versand fehlgeschlagen.';
-if (!ok) alert('Fehler beim Versand: Serverantwort nicht OK');
-
 
 
 
