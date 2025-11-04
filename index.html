@@ -657,7 +657,18 @@ const filename = `Fahrzeugkontrolle_${tr}_${tl}_${safeDate}.pdf`;
     const html = '<div>' + bodyText
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>') + '</div>';
 
-    const payload = { to, cc, bcc, subject, text: bodyText, html, filename, pdfBase64: base64 };
+ // Payload korrigiert: body statt bodyText
+const payload = { 
+  to, 
+  cc, 
+  bcc, 
+  subject, 
+  text: body,          // ✅ body existiert, bodyText war nicht definiert
+  html, 
+  filename, 
+  pdfBase64: base64 
+};
+
 
 if (s) s.textContent = 'Sende E-Mail …';
 
