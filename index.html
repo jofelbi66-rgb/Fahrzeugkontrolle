@@ -647,6 +647,18 @@ const subject =
 const safeDate = dtMail.replace(/[^\wäöüÄÖÜß]+/g, '_');
 const filename = `Fahrzeugkontrolle_${tr}_${tl}_${safeDate}.pdf`;
 
+// Body-Text für die E-Mail: Hauptgruppen + Status
+const lines = items.map(it => {
+  const r = state.res[it.id] || {};
+  const sev = r.sev || '-';
+  const status =
+    sev === 'Mangel'  ? 'Mangel'  :
+    sev === 'Hinweis' ? 'Hinweis' :
+    'OK';
+  return `${it.title}: ${status}`;
+});
+
+const body = lines.join('\n');   // <-- ab hier gibt es "body"
 
     // Empfänger
     const to  = 'Dispo-Memmingen@felbermayr.cc';
