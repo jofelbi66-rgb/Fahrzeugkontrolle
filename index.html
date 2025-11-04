@@ -734,8 +734,23 @@ const tr = document.getElementById('inTr')?.value || 'Zugmaschine';
 const tl = document.getElementById('inTl')?.value || 'Auflieger/Modul';
 const drv = document.getElementById('inOp')?.value || 'Fahrer/in';
 
-// Gesamtstatus, falls vorhanden (Hinweis / OK / Mangel)
-const overallSev = state?.overallSev || 'OK';
+
+// Gesamtstatus automatisch ermitteln: Mangel > Hinweis > OK
+const overallSev = (() => {
+  let sev = 'OK';
+  for (const id in state.res) {
+    const res = state.res[id];
+    if (!res || !res.sev) continue;
+    if (res.sev === 'Mangel') return 'Mangel'; // höchste Priorität
+    if (res.sev === 'Hinweis' && sev === 'OK') sev = 'Hinweis';
+  }
+  return sev;
+})();
+
+// Freigabe automatisch aus Gesamtstatus ableiten
+const releaseText = (overallSev === 'Mangel') ? 'NICHT ERTEILT' : 'ERTEILT';
+ 
+   
 
 // Neuer Betreff
 const subject =
