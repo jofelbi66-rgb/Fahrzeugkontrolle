@@ -659,6 +659,20 @@ const lines = items.map(it => {
 });
 
 const body = lines.join('\n');   // <-- ab hier gibt es "body"
+    // Zusatzinfos für die HTML-Mail an GAS
+const driverName = document.getElementById('inOp')?.value  || '';
+const truck      = document.getElementById('inTr')?.value  || '';
+const trailer    = document.getElementById('inTl')?.value  || '';
+const location   = document.getElementById('inLoc')?.value || '';
+
+// Geo-Tag wie im PDF
+const geoTag = (state.geo && state.geo.lat && state.geo.lon)
+  ? `${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`
+  : '';
+
+// Die Statuszeilen auch als Checkliste an GAS geben
+const checkItems = lines;
+
 
     // Empfänger
     const to  = 'Dispo-Memmingen@felbermayr.cc';
@@ -670,15 +684,24 @@ const body = lines.join('\n');   // <-- ab hier gibt es "body"
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>') + '</div>';
 
  // Payload korrigiert: body statt bodyText
-const payload = { 
-  to, 
-  cc, 
-  bcc, 
-  subject, 
-  text: body,          // ✅ body existiert, bodyText war nicht definiert
-  html, 
-  filename, 
-  pdfBase64: base64 
+const payload = {
+  to,
+  cc,
+  bcc,
+  subject,
+  text: body,      // bleibt wie gehabt
+  html,
+  filename,
+  pdfBase64: base64,
+
+  // NEU: Daten für das schöne HTML in GAS
+  driverName,
+  truck,
+  trailer,
+  location,
+  geoTag,
+  checkItems,
+  overallSev      // den hast du weiter oben schon berechnet
 };
 
 
