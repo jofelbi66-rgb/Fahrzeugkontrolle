@@ -654,7 +654,7 @@ const filename = `Fahrzeugkontrolle_${tr}_${tl}_${safeDate}.pdf`;
     const bcc = (document.getElementById('inBcc')?.value || '').trim();
 
     // HTML aus Text (escapen)
-    const html = '<div>' + bodyText
+    const html = '<div>' + body
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>') + '</div>';
 
  // Payload korrigiert: body statt bodyText
