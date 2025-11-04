@@ -749,7 +749,18 @@ const overallSev = (() => {
 
 // Freigabe automatisch aus Gesamtstatus ableiten
 const releaseText = (overallSev === 'Mangel') ? 'NICHT ERTEILT' : 'ERTEILT';
- 
+    
+ // Versand komplett verhindern, wenn ein Mangel vorliegt
+if (overallSev === 'Mangel') {
+  alert('Es liegt mindestens ein MANGEL vor.\n' +
+        'Freigabe NICHT ERTEILT – E-Mail wird nicht versendet.');
+
+  const s = document.getElementById('status');
+  if (s) s.textContent = 'Freigabe NICHT ERTEILT – keine Mail versendet.';
+
+  return; // >>> hier brichst du onMail() ab, bevor irgendetwas verschickt wird
+}
+
    
 
 // Neuer Betreff
