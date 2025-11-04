@@ -422,8 +422,6 @@ function buildPdf() {
  // Kopf
 line('Fahrzeugkontrolle – Schwerlast/Zugmaschine', true);
 
-const dtDisplay =
-  document.getElementById('inDate')?.value || formatNowForDisplay();
 line(`Datum/Uhrzeit: ${dtDisplay}`);
 
 line(`Fahrer/in: ${document.getElementById('inOp')?.value || ''}`);
