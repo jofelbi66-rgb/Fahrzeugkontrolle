@@ -188,8 +188,8 @@ textarea.autogrow{
     <section>
       <h2>Fahrzeugdaten</h2>
       <div class="grid grid-2">
-        <label><span>Datum/Uhrzeit</span><input id="inDate" type="datetime-local"></label>
-        <label><span>Fahrer/in *</span><input id="inOp" placeholder="Vorname Nachname"></label>
+        <label><span>Datum/Uhrzeit</span><input id="inDate" type="text" placeholder="Datum / Uhrzeit"></label>
+        <label><span>Fahrer/in *</span><input id="inOp" placeholder="Fahrer/in"></label>
         <label><span>Zugmaschine *</span><input id="inTr" placeholder="z.B. DN-AB 1234"></label>
         <label><span>Auflieger/Modul *</span><input id="inTl" placeholder="…"></label>
         <label class="grid-col-span-2"><span>Ort</span><input id="inLoc" placeholder="automatisch per GPS oder manuell"></label>
@@ -419,15 +419,19 @@ function buildPdf() {
 
   const line=(txt,bold=false)=>{ doc.setFont('helvetica', bold?'bold':'normal'); doc.text(String(txt||''), m, y); y+=6; };
 
-  // Kopf
-  line('Fahrzeugkontrolle – Schwerlast/Zugmaschine', true);
-  line(`Datum/Uhrzeit: ${document.getElementById('inDate')?.value || ''}`);
-  line(`Fahrer/in: ${document.getElementById('inOp')?.value || ''}`);
-  line(`Zugmaschine: ${document.getElementById('inTr')?.value || ''} | Auflieger/Modul: ${document.getElementById('inTl')?.value || ''}`);
-  const locVal = document.getElementById('inLoc')?.value || '';
-  if (locVal) line(`Ort: ${locVal}`);
-  if (state.geo) line(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
-  y += 2;
+ // Kopf
+line('Fahrzeugkontrolle – Schwerlast/Zugmaschine', true);
+
+const dtDisplay =
+  document.getElementById('inDate')?.value || formatNowForDisplay();
+line(`Datum/Uhrzeit: ${dtDisplay}`);
+
+line(`Fahrer/in: ${document.getElementById('inOp')?.value || ''}`);
+line(`Zugmaschine: ${document.getElementById('inTr')?.value || ''} | Auflieger/Modul: ${document.getElementById('inTl')?.value || ''}`);
+const locVal = document.getElementById('inLoc')?.value || '';
+if (locVal) line(`Ort: ${locVal}`);
+if (state.geo) line(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
+y += 2;
 
   
  // Tabelle
@@ -950,52 +954,33 @@ setTimeout(() => {
   console.log('[INFO] Unterpunkte ergänzt');
 }, 500);
 
+// Pflicht: Signatur aktivieren
+initSignature();
 
-  // Pflicht: Signatur aktivieren
-  initSignature();
-   // Fahrerfeld automatisch finden
-  let driverField =
-    document.getElementById('inDriver') ||
-    document.getElementById('inFr') ||
-    document.getElementById('inFahrer') ||
-    (() => {
-      // Fallback: Label mit "Fahrer" suchen
-      const label = Array.from(document.querySelectorAll('label'))
-        .find(l => /fahrer/i.test(l.textContent));
-      if (!label) return null;
-
-      const forId = label.getAttribute('for');
-      if (forId) {
-        const el = document.getElementById(forId);
-        if (el) return el;
-      }
-
-      // Falls kein "for" gesetzt ist: erstes Input/Textfeld im selben Container
-      return label.parentElement.querySelector('input,textarea');
-    })();
-
-  console.log('[INIT] Fahrerfeld:', driverField);
-
-  if (driverField) {
-    // Gespeicherten Namen beim Laden setzen
-    const savedDriver = localStorage.getItem('driverName');
-    if (savedDriver) {
-      driverField.value = savedDriver;
-    }
-
-    // Bei jeder Änderung den Namen speichern
-    driverField.addEventListener('input', e => {
-      localStorage.setItem('driverName', e.target.value.trim());
-    });
-  } else {
-    console.warn('[INIT] Kein Fahrer-Eingabefeld gefunden – bitte Markup prüfen.');
+// Fahrername merken & beim Start automatisch einfügen
+const driverField = document.getElementById('inOp');
+if (driverField) {
+  const savedDriver = localStorage.getItem('driverName');
+  if (savedDriver) {
+    driverField.value = savedDriver;
   }
-  // Datum + Uhrzeit automatisch setzen (nur wenn Feld leer ist)
-  const dateField = document.getElementById('inDate');
-  if (dateField && !dateField.value) {
-    dateField.value = formatNowForDisplay();
-    console.log('[INIT] Datum/Uhrzeit gesetzt auf:', dateField.value);
-  }
+
+  driverField.addEventListener('input', e => {
+    localStorage.setItem('driverName', e.target.value.trim());
+  });
+  console.log('[INIT] Fahrerfeld gefunden:', driverField);
+} else {
+  console.warn('[INIT] Kein Fahrer-Eingabefeld mit ID "inOp" gefunden!');
+}
+
+// Datum + Uhrzeit bei jedem Start auf "jetzt" setzen
+const dateField = document.getElementById('inDate');
+if (dateField) {
+  dateField.value = formatNowForDisplay();
+  console.log('[INIT] Datum/Uhrzeit gesetzt auf:', dateField.value);
+}
+
+  
 
  
   
