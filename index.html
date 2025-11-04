@@ -188,7 +188,7 @@ textarea.autogrow{
     <section>
       <h2>Fahrzeugdaten</h2>
       <div class="grid grid-2">
-        <label><span>Datum/Uhrzeit</span><input id="inDate" type="text"></label>
+        <label><span>Datum/Uhrzeit</span><input id="inDate" type="datetime-local"></label>
         <label><span>Fahrer/in *</span><input id="inOp" placeholder="Vorname Nachname"></label>
         <label><span>Zugmaschine *</span><input id="inTr" placeholder="z.B. DN-AB 1234"></label>
         <label><span>Auflieger/Modul *</span><input id="inTl" placeholder="…"></label>
@@ -927,33 +927,51 @@ setTimeout(() => {
 
   // Pflicht: Signatur aktivieren
   initSignature();
- // Fahrername merken & beim Start automatisch einfügen
-const driverField = document.getElementById('inDriver');
-if (driverField) {
-  // Gespeicherten Namen beim Laden setzen
-  const savedDriver = localStorage.getItem('driverName');
-  if (savedDriver) {
-    driverField.value = savedDriver;
+   // Fahrername merken & beim Start automatisch einfügen
+  const driverField =
+    document.getElementById('inDriver') ||
+    document.getElementById('inFr') ||
+    document.querySelector('input[placeholder*="Fahrer"], input[aria-label*="Fahrer"]');
+
+  if (driverField) {
+    console.log('[INIT] Fahrerfeld gefunden mit id:', driverField.id);
+
+    const savedDriver = localStorage.getItem('driverName');
+    if (savedDriver) {
+      driverField.value = savedDriver;
+    }
+
+    driverField.addEventListener('input', e => {
+      localStorage.setItem('driverName', e.target.value.trim());
+    });
+  } else {
+    console.warn('[INIT] Kein Fahrer-Eingabefeld gefunden – bitte ID prüfen.');
   }
 
-  // Bei jeder Änderung den Namen speichern
-  driverField.addEventListener('input', e => {
-    localStorage.setItem('driverName', e.target.value.trim());
-  });
-}
+  // Datum + Uhrzeit automatisch setzen (nur wenn Feld leer ist)
+  const dateField = document.getElementById('inDate');
+  if (dateField && !dateField.value) {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm   = String(now.getMonth() + 1).padStart(2, '0');
+    const dd   = String(now.getDate()).padStart(2, '0');
+    const hh   = String(now.getHours()).padStart(2, '0');
+    const mi   = String(now.getMinutes()).padStart(2, '0');
 
-// Aktuelles Datum automatisch setzen (nur wenn Feld leer ist)
-const dateField = document.getElementById('inDate');
-if (dateField && !dateField.value) {
-  const now = new Date();
-  const day = String(now.getDate()).padStart(2, '0');
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const year = now.getFullYear();
-  const today = `${day}.${month}.${year}`;
-  dateField.value = today;
-}
+    // Je nach Feldtyp passend setzen
+    if (dateField.type === 'datetime-local') {
+      // HTML5 datetime-local: 2025-11-04T14:30
+      dateField.value = `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+    } else if (dateField.type === 'date') {
+      // Nur Datum: 2025-11-04
+      dateField.value = `${yyyy}-${mm}-${dd}`;
+    } else {
+      // Textfeld → deutsches Format mit Uhrzeit
+      dateField.value = `${dd}.${mm}.${yyyy} ${hh}:${mi}`;
+    }
 
-
+    console.log('[INIT] Datum/Uhrzeit gesetzt auf:', dateField.value, 'Typ:', dateField.type);
+  }
   
 
 });   // Ende DOMContentLoaded
