@@ -653,6 +653,51 @@ items.forEach(it=>{
 // -------- Utilities --------
 const blobToBase64 = blob => new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(blob); });
 
+  // -------- Validierung vor PDF/Mail --------
+function validateBeforeSend() {
+  const errors = [];
+
+  // Grunddaten
+  const dt   = document.getElementById('inDate')?.value.trim() || '';
+  const drv  = document.getElementById('inOp')  ?.value.trim() || '';
+  const trk  = document.getElementById('inTr')  ?.value.trim() || '';
+  const tlr  = document.getElementById('inTl')  ?.value.trim() || '';
+
+  if (!dt)  errors.push('• Datum/Uhrzeit');
+  if (!drv) errors.push('• Fahrer/in');
+  if (!trk) errors.push('• Zugmaschine');
+  if (!tlr) errors.push('• Auflieger/Modul');
+
+  // Pflicht-Checkpunkte (items mit req === true)
+  const missingChecks = items
+    .filter(it => it.req)
+    .filter(it => {
+      const r = state.res[it.id];
+      return !r || !r.sev || r.sev === '-';
+    })
+    .map(it => '  - ' + it.title);
+
+  if (missingChecks.length) {
+    errors.push('• Pflicht-Checkpunkte:\n' + missingChecks.join('\n'));
+  }
+
+  // Digitale Unterschrift
+  if (!state.sig) {
+    errors.push('• Digitale Unterschrift');
+  }
+
+  if (errors.length) {
+    alert(
+      'Bitte vor dem Erzeugen/Versand noch Folgendes erledigen:\n\n' +
+      errors.join('\n')
+    );
+    return false;
+  }
+
+  return true;
+}
+  
+
 // -------- Aktionen --------
 
   function onPdf(){
