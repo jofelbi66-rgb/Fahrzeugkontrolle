@@ -188,7 +188,7 @@ textarea.autogrow{
     <section>
       <h2>Fahrzeugdaten</h2>
       <div class="grid grid-2">
-        <label><span>Datum/Uhrzeit</span><input id="inDate" type="datetime-local"></label>
+        <label><span>Datum/Uhrzeit</span><input id="inDate" type="text"></label>
         <label><span>Fahrer/in *</span><input id="inOp" placeholder="Vorname Nachname"></label>
         <label><span>Zugmaschine *</span><input id="inTr" placeholder="z.B. DN-AB 1234"></label>
         <label><span>Auflieger/Modul *</span><input id="inTl" placeholder="…"></label>
@@ -927,29 +927,34 @@ setTimeout(() => {
 
   // Pflicht: Signatur aktivieren
   initSignature();
- 
+ // Fahrername merken & beim Start automatisch einfügen
+const driverField = document.getElementById('inDriver');
+if (driverField) {
+  // Gespeicherten Namen beim Laden setzen
+  const savedDriver = localStorage.getItem('driverName');
+  if (savedDriver) {
+    driverField.value = savedDriver;
+  }
 
-    // Fahrername merken & beim Start automatisch einfügen
-    const driverField = document.getElementById('inDriver');
-    if (driverField) {
-      // Gespeicherten Namen beim Laden setzen
-      const savedDriver = localStorage.getItem('driverName');
-      if (savedDriver) {
-        driverField.value = savedDriver;
-      }
+  // Bei jeder Änderung den Namen speichern
+  driverField.addEventListener('input', e => {
+    localStorage.setItem('driverName', e.target.value.trim());
+  });
+}
 
-      // Bei jeder Änderung den Namen speichern
-      driverField.addEventListener('input', e => {
-        localStorage.setItem('driverName', e.target.value.trim());
-      });
-    }
+// Aktuelles Datum automatisch setzen (nur wenn Feld leer ist)
+const dateField = document.getElementById('inDate');
+if (dateField && !dateField.value) {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const year = now.getFullYear();
+  const today = `${day}.${month}.${year}`;
+  dateField.value = today;
+}
 
-    // Aktuelles Datum automatisch setzen (nur wenn das Feld leer ist)
-    const dateField = document.getElementById('inDate');
-    if (dateField && !dateField.value) {
-      const today = new Date().toISOString().split('T')[0];
-      dateField.value = today;
-    }
+
+  
 
 });   // Ende DOMContentLoaded
 
