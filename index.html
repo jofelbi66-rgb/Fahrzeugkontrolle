@@ -190,7 +190,7 @@ textarea.autogrow{
       <div class="grid grid-2">
         <label><span>Datum/Uhrzeit</span><input id="inDate" type="datetime-local"></label>
         <label><span>Fahrer/in *</span><input id="inOp" placeholder="Vorname Nachname"></label>
-        <label><span>Zugmaschine *</span><input id="inTr" placeholder="DN-AB 1234"></label>
+        <label><span>Zugmaschine *</span><input id="inTr" placeholder="z.B. DN-AB 1234"></label>
         <label><span>Auflieger/Modul *</span><input id="inTl" placeholder="…"></label>
         <label class="grid-col-span-2"><span>Ort</span><input id="inLoc" placeholder="automatisch per GPS oder manuell"></label>
       </div>
@@ -927,6 +927,36 @@ setTimeout(() => {
 
   // Pflicht: Signatur aktivieren
   initSignature();
+    // Pflicht: Signatur aktivieren
+    initSignature();
+
+    // Fahrername merken & beim Start automatisch einfügen
+    const driverField = document.getElementById('inDriver');
+    if (driverField) {
+      // Gespeicherten Namen beim Laden setzen
+      const savedDriver = localStorage.getItem('driverName');
+      if (savedDriver) {
+        driverField.value = savedDriver;
+      }
+
+      // Bei jeder Änderung den Namen speichern
+      driverField.addEventListener('input', e => {
+        localStorage.setItem('driverName', e.target.value.trim());
+      });
+    }
+
+    // Aktuelles Datum automatisch setzen (nur wenn das Feld leer ist)
+    const dateField = document.getElementById('inDate');
+    if (dateField && !dateField.value) {
+      const today = new Date().toISOString().split('T')[0];
+      dateField.value = today;
+    }
+
+});   // Ende DOMContentLoaded
+
+})(); // Ende IIFE
+
+  
 });
 
 
