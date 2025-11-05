@@ -189,7 +189,11 @@ footer {
   text-align: center;
   color: #666;
 }
+// letzter Fahrername für die PDF-Fußzeile
+let lastPdfDriver = '';
 
+
+    
   </style>
 </head>
 <body>
@@ -718,11 +722,13 @@ try {
   const margin =
     (typeof m !== 'undefined' && Number.isFinite(m)) ? m : 10;
 
-  // Fahrer sicher ermitteln (falls driverName nicht existiert)
-  let fahrer = '(kein Fahrer)';
-  if (typeof driverName !== 'undefined' && driverName) {
-    fahrer = String(driverName);
-  }
+// Fahrer sicher ermitteln (falls lastPdfDriver nicht existiert)
+let fahrer = '(kein Fahrer)';
+if (typeof lastPdfDriver !== 'undefined' && lastPdfDriver) {
+  fahrer = String(lastPdfDriver);
+}
+
+  
 
   const datum = new Date().toLocaleDateString('de-DE');
 
@@ -818,6 +824,7 @@ async function onMail(){
     const s = document.getElementById('status'); if (s) s.textContent = 'Erzeuge PDF …';
 
     // PDF erstellen
+    lastPdfDriver = driverName;             // <--- NEU: Fahrer für Fußzeile merken
     const pdfBlob = buildPdf();
     const base64  = await blobToBase64(pdfBlob);
 
