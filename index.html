@@ -902,7 +902,10 @@ const geoTag = (state.geo && state.geo.lat && state.geo.lon)
 // Die Statuszeilen auch als Checkliste an GAS geben
 const checkItems = lines;
 
-
+// PDF erstellen
+    lastPdfDriver = driverName;             // <--- NEU: Fahrer für Fußzeile merken
+    const pdfBlob = buildPdf();
+    const base64  = await blobToBase64(pdfBlob);
     // Empfänger
     const to  = 'Dispo-Memmingen@felbermayr.cc';
     const cc  = (document.getElementById('inCc') ?.value || '').trim();
