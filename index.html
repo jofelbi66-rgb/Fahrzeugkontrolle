@@ -823,11 +823,7 @@ async function onMail(){
     const RELAY_URL = 'https://script.google.com/macros/s/AKfycbyl-Wui8XwQJq2lHZb_vaoc-ZCOGpGbn3v2GDd-t0WOj-3M_pADzxEKbvLTvwPKOkQq/exec';
     const s = document.getElementById('status'); if (s) s.textContent = 'Erzeuge PDF …';
 
-    // PDF erstellen
-    lastPdfDriver = driverName;             // <--- NEU: Fahrer für Fußzeile merken
-    const pdfBlob = buildPdf();
-    const base64  = await blobToBase64(pdfBlob);
-
+ 
     // Stammdaten
     // --- Betreff & Dateiname neu aufbauen ---
 const dateField = document.getElementById('inDate');
