@@ -704,6 +704,35 @@ items.forEach(it=>{
       for(let i=2;i<=doc.getNumberOfPages();i++){ doc.setPage(i); doc.addImage(domLogo,'PNG',X_LOGO,Y_LOGO,LOGO_W,LOGO_H); }
     }
   } catch(_) {}
+// ------------------------------------------------------
+// Fußzeile: Fahrer, Datum, Seitenzahl
+// ------------------------------------------------------
+try {
+  const pageCount = doc.getNumberOfPages();
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const footerY = pageH - 10; // Abstand vom unteren Rand
+
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+
+    const fahrer = driverName || '(kein Fahrer)';
+    const datum = new Date().toLocaleDateString('de-DE');
+
+    // Links: Fahrer
+    doc.text(`Fahrer: ${fahrer}`, m, footerY);
+
+    // Mitte: Datum
+    doc.text(`Datum: ${datum}`, pageW / 2, footerY, { align: 'center' });
+
+    // Rechts: Seitenzahl
+    doc.text(`Seite ${i} von ${pageCount}`, pageW - m, footerY, { align: 'right' });
+  }
+} catch (e) {
+  console.warn('Fußzeile konnte nicht erzeugt werden:', e);
+}
 
   return doc.output('blob');
 }
