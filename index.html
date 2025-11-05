@@ -19,9 +19,9 @@
   <style>
     :root{--b:#e2e8f0;--mut:#64748b;--ok:#059669;--warn:#d97706;--bad:#dc2626}
     *{box-sizing:border-box}
-    body{margin:0;font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f8fafc;color:#0f172a}
+    body{margin:0;font:12px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f8fafc;color:#0f172a}
     header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--b);z-index:5}
-    .wrap{max-width:980px;margin:0 auto;padding:14px}
+    .wrap{max-width:980px;margin:0 auto;padding:10px}
     h1{margin:0;font-size:20px} h2{margin:0 0 10px;font-size:18px}
     section{background:#fff;border:1px solid var(--b);border-radius:12px;padding:14px;margin:12px 0}
     .grid{display:grid;gap:10px}
@@ -147,6 +147,48 @@ textarea.autogrow{
     line-height: 1.35;
   }
 }
+/* ----- Signaturbereich kompakt ----- */
+.signature-block {
+  margin-top: 12px;
+}
+
+.signature-block h2 {
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.signature-note {
+  font-size: 10px;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.sig-card {
+  overflow: hidden;
+  border: 1px solid var(--b);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.sig-row {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.sig-row .btn {
+  padding: 6px 12px;
+  font-size: 11px;
+  border-radius: 6px;
+}
+
+footer {
+  margin-top: 10px;
+  font-size: 9px;
+  text-align: center;
+  color: #666;
+}
 
   </style>
 </head>
@@ -212,21 +254,31 @@ textarea.autogrow{
       <p class="status">Fotos werden stark komprimiert.</p>
     </section>
 
-    <section>
-      <h2>Unterschrift</h2>
-      <div class="card" style="overflow:hidden">
-        <canvas id="sig" style="touch-action:none;width:100%;height:170px;"></canvas>
-      </div>
-      <div class="row" style="margin-top:24px">
-        <button class="btn" id="btnClearSig">Löschen</button>
-        <button class="btn" id="btnSaveSig">Übernehmen</button>
-        <span id="sigStatus" class="status" style="display:none;color:#047857">Gespeichert ✓</span>
-      </div>
-    </section>
-  </main>
+ <section class="signature-block">
+  <h2>Unterschrift</h2>
 
-  <footer><div class="wrap"><div id="status" class="status">Bereit</div></div></footer>
+  <p class="signature-note">
+    Durch meine Unterschrift bestätige ich Überprüfung sämtlicher Punkte.
+  </p>
 
+  <div class="card sig-card">
+    <canvas id="sig" style="touch-action:none;width:100%;height:120px;"></canvas>
+  </div>
+
+  <div class="row sig-row">
+    <button class="btn" id="btnClearSig">Löschen</button>
+    <button class="btn" id="btnSaveSig">Übernehmen</button>
+    <span id="sigStatus" class="status" style="display:none;color:#047857;">Gespeichert ✓</span>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div id="status" class="status">Bereit</div>
+  </div>
+</footer>
+
+ 
   <!-- jsPDF -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
