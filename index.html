@@ -829,6 +829,14 @@ const payload = {
 };
 
 if (s) s.textContent = 'Sende E-Mail …';
+// --- Pflichtprüfung: Ort muss vorhanden sein ---
+if (!location || location.trim() === '') {
+  alert('Ort konnte nicht ermittelt werden.\nBitte GPS prüfen und erneut versuchen.');
+  const s = document.getElementById('status');
+  if (s) s.textContent = '';   // Statusmeldung zurücksetzen
+  return;                      // Versand abbrechen
+}
+// ------------------------------------------------
 
 try {
   await fetch(RELAY_URL, {
