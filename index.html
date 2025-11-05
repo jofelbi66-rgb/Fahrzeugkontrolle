@@ -610,13 +610,19 @@ const txt  = base + (note && note !== desc ? `\nHinweis: ${note}` : '');
 // Unterschrift
 y += 16; // mehr Abstand von der Tabelle zum Label
 
+// Hinweistext + Label für Unterschrift
+doc.setFont('helvetica', 'normal');
+doc.setFontSize(9);
+doc.text('Durch meine Unterschrift bestätige ich die Überprüfung sämtlicher Punkte.', m, y);
+y += 5; // etwas Abstand
 doc.setFont('helvetica', 'bold');
 doc.text('Digitale Unterschrift:', m, y);
+
 
 // kein zusätzliches y-Inkrement hinter dem Label!
 
 const sigBoxW = pageW - 2 * m;
-const sigBoxH = 55;
+const sigBoxH = 40;
 const sigX = m;
 const sigY = y + 2;
 
