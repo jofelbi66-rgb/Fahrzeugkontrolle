@@ -552,22 +552,29 @@ const x    = { status: m, text: m + 28, foto: pageW - m - colW.foto };
 // Zebra + Zeilenhöhen + Reserve für Unterschrift
 const zebraA = [255,255,255];
 const zebraB = [248,250,252];
-const rowMin = 10;   // früher 8 → etwas luftiger
-const lineH  = 4.5;    // pro umbrochener Textzeile (früher 4)
-const padV   = 5;    // vertikales Padding (früher 5)
-const reserveForSignature = 70; // Platz lassen (Box + Beschriftung)
+
+// Zeilen kompakter:
+const rowMin = 8;      // statt 10
+const lineH  = 4;      // statt 4.5
+const padV   = 3;      // statt 5
+
+// etwas weniger Reserve für die Unterschrift
+const reserveForSignature = 55; // statt 70
+
 
 // Tabellenkopf
-doc.setDrawColor(200); doc.setFillColor(245,245,245);
-doc.rect(m, y, pageW - 2*m, 8, 'F');
- doc.setFontSize(10);  // Tabelleninhalt kompakter
-doc.setFont('helvetica','normal');
- 
+doc.setDrawColor(200); 
+doc.setFillColor(245,245,245);
+doc.rect(m, y, pageW - 2*m, 6, 'F');   // Höhe 6 statt 8
+
+doc.setFontSize(9);                    // Kopf minimal kleiner
 doc.setFont('helvetica','bold');
-doc.text('Status',    x.status + 2, y + 5);
-doc.text('Checkpoint',x.text   + 2, y + 5);
-doc.text('Foto',      x.foto   + 2, y + 5);
-y += 10;
+doc.text('Status',     x.status + 2, y + 4);  // tiefer, passend zu Höhe 6
+doc.text('Checkpoint', x.text   + 2, y + 4);
+doc.text('Foto',       x.foto   + 2, y + 4);
+
+y += 8;                                // statt 10
+
 
 // Zeilen
 let rowIndex = 0;
