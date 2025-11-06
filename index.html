@@ -702,10 +702,28 @@ items.forEach(it=>{
   doc.addPage();
   let y2 = m2;
 
-  // Überschrift
-  doc.setFont('helvetica','bold');
-  doc.text(`Fotos – ${it.title}`, m2, y2);
-  y2 += 8;
+ // ------------------------------------------------------
+// Fotoblock-Überschrift mit intelligenter Seitenwahl
+// ------------------------------------------------------
+
+// Mindestplatz, den wir für Überschrift + mindestens ein Foto brauchen (in mm)
+const minSpaceForPhotoBlock = 90;   // ggf. später feinjustieren
+const footerReserve          = 15;  // Abstand zum Fußbereich
+
+// Reicht der Platz auf der aktuellen Seite noch?
+if (y2 + minSpaceForPhotoBlock > pageH2 - footerReserve) {
+  // Nein -> neue Seite anfangen
+  doc.addPage();
+  y2 = m2;                  // wieder an oberen Rand der neuen Seite
+} else {
+  // Ja -> nur kleinen Abstand zum vorherigen Block einfügen
+  y2 += 6;
+}
+
+// Überschrift für diesen Fotoblock
+doc.setFont('helvetica', 'bold');
+doc.text(`Fotos – ${it.title}`, m2, y2);
+y2 += 8;                     // etwas Luft unter der Überschrift
 
   // Jede Aufnahme in moderater Größe einfügen
   const pageW2 = doc.internal.pageSize.getWidth();
