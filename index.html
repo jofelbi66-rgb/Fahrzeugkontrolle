@@ -598,7 +598,7 @@ const txt = base + (note && note !== desc ? `\nHinweis: ${note}` : '');
 
 // Text umbrechen wie gehabt
 doc.setFont('helvetica', 'normal');
-const wrapped = doc.splitTextToSize(txt, colW.text - 4);
+const wrapped = doc.splitTextToSize(txt, colW.text - 10);
 const rowH = Math.max(rowMin, padV + wrapped.length * lineH);
 
 
