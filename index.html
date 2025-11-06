@@ -646,23 +646,19 @@ if (lines.length > 1) {
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(0, 0, 0);
 
-const restLines = lines.slice(1);
-let startY = textY + lineH; // Zeilenhöhe wie gehabt
-
-restLines.forEach(line => {
-  const trimmed = String(line).trim();
-
-  // Wenn die Zeile mit "Hinweis:" beginnt → Icon davor
-  if (trimmed.toLowerCase().startsWith('hinweis:')) {
-    const warnIcon = '⚠';
-    doc.text(`${warnIcon} ${trimmed}`, textX, startY);
-  } else {
-    doc.text(trimmed, textX, startY);
+const restLines = lines.slice(1).map(line => {
+  const txt = String(line);
+  // Wenn Zeile (nach Trim) mit "Hinweis:" beginnt → Wort durch Symbol ersetzen
+  if (txt.trim().toLowerCase().startsWith('hinweis:')) {
+    return txt.replace(/hinweis:/i, '⚠');
   }
-
-  startY += lineH; // Zeilenhöhe beibehalten
+  return txt;
 });
-  
+
+const startY = textY + lineH;  // wie vorher
+doc.text(restLines, textX, startY, { lineHeightFactor: 1.0 });
+
+
 }
 
 
