@@ -631,8 +631,6 @@ doc.text(String(sev),   x.status + 2, y + 7);
 doc.text(String(fotos), x.foto   + 2, y + 7);
 
 
-// Basisteil: Titel + Beschreibung
-const base = it.title + (desc ? `\n${desc}` : '');
 
 // kompletter Text inkl. Hinweis-Zeile (nur wenn note vom desc abweicht)
 const txt = base + (note && note !== desc ? `\nHinweis: ${note}` : '');
