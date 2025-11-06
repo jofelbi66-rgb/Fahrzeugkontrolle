@@ -586,23 +586,26 @@ const sev = status;  // <<< Back-Compat: für alte sev-Verwendungen im PDF
 const fotos  = photos.length ? `ja (${photos.length})` : '-';
  
 
-const desc = (it.description || '').trim();
+// Beschreibung & Hinweistext
+const desc = (it.description || '').trim();   // unsere Prüfpunkte
+let note   = (r.note || '').trim();           // Fahrer-Bemerkung
 
-// Hinweis-Text holen
-let note = (r.note || '').trim();
-
-// 1) Wenn Hinweis mit "&" beginnt → & durch ⚠ ersetzen, Rest *unverändert* lassen
-//    Beispiel Eingabe: "& Prüfdatum abgelaufen!"
-//    Ausgabe:          "⚠ Prüfdatum abgelaufen!"
+// Wenn Hinweis mit "&" beginnt → & durch ⚠ ersetzen (optional)
 if (/^&/.test(note)) {
   note = note.replace(/^&\s*/, '⚠ ');
 }
 
-// 2) Basistext (Titel + Beschreibung) wie gehabt
-const base = it.title + (desc ? '\n' + desc : '');
+// Basistext (Titel + Beschreibung)
+const base = it.title + (desc ? `\n${desc}` : '');
 
-// 3) Hinweiszeile nur anhängen, wenn note vom desc abweicht
-const txt = base + (note && note !== desc ? '\n' + note : '');
+// Hinweis farbig hervorheben, nur wenn er vom desc abweicht
+let txt = base;
+if (note && note !== desc) {
+  // Farbe wählen – Orange: [255,140,0], Blau: [0,102,204]
+  doc.setTextColor(255, 140, 0);
+  txt += `\n${note}`;
+  doc.setTextColor(0, 0, 0); // danach wieder Schwarz
+}
 
 
   doc.setFont('helvetica','normal');
