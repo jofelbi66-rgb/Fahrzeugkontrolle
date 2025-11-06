@@ -727,32 +727,32 @@ items.forEach(it=>{
   } catch(_) {}
 // ------------------------------------------------------
 // ------------------------------------------------------
+// ------------------------------------------------------
 // Fußzeile: Fahrer, Datum, Seitenzahl
 // ------------------------------------------------------
 try {
   const pageCount = doc.getNumberOfPages();
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  const footerY = pageH - 10; // Abstand vom unteren Rand
+  const footerY = pageH - 8;          // etwas dichter an den Rand
+  const margin  = 10;
 
-  // Margin sicher ermitteln (falls m nicht existiert)
-  const margin =
-    (typeof m !== 'undefined' && Number.isFinite(m)) ? m : 10;
+  // Fahrername direkt aus Eingabefeld "inOp"
+  const driverField = document.getElementById('inOp');
+  const fahrer = driverField && driverField.value
+    ? driverField.value
+    : '(kein Fahrer)';
 
-// Fahrer sicher ermitteln (falls lastPdfDriver nicht existiert)
-let fahrer = '(kein Fahrer)';
-if (typeof lastPdfDriver !== 'undefined' && lastPdfDriver) {
-  fahrer = String(lastPdfDriver);
-}
-
-  
-
-  const datum = new Date().toLocaleDateString('de-DE');
+  // Datum aus Feld "inDate" oder aktuelles Datum
+  const dateField = document.getElementById('inDate');
+  const datum = dateField && dateField.value
+    ? dateField.value
+    : new Date().toLocaleDateString('de-DE');
 
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
+    doc.setFontSize(8); // dezente Schrift für Fußzeile
 
     // Links: Fahrer
     doc.text(`Fahrer: ${fahrer}`, margin, footerY);
@@ -767,9 +767,7 @@ if (typeof lastPdfDriver !== 'undefined' && lastPdfDriver) {
   console.warn('Fußzeile konnte nicht erzeugt werden:', e);
 }
 
-
-  return doc.output('blob');
-}
+return doc.output('blob');
 
 // -------- Utilities --------
 const blobToBase64 = blob => new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(blob); });
