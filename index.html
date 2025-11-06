@@ -709,17 +709,18 @@ items.forEach(it => {
     y2 = m2;               // Start oben auf der erste Fotoseite
   }
 
-  // --- Überschrift für diesen Fotoblock ---
-  // Falls die Überschrift am Seitenende landen würde: neue Seite
-  if (y2 + 10 > pageH2 - 20) {   // pageH2: deine Foto-Seitenhöhe, 20 mm Reserve unten
-    doc.addPage();
-    y2 = m2;
-  }
+// Überschrift für diesen Fotoblock
+// Falls die Überschrift am Seitenende landen würde: neue Seite
+const pageHeightForHeader = doc.internal.pageSize.getHeight();  // Höhe lokal ermitteln
+if (y2 + 10 > pageHeightForHeader - 20) {   // 20 mm Reserve nach unten
+  doc.addPage();
+  y2 = m2;
+}
 
-  doc.setFont('helvetica', 'bold');
-  doc.text(`Fotos – ${it.title}`, m2, y2);
-  y2 += 8;
-
+doc.setFont('helvetica', 'bold');
+doc.text(`Fotos – ${it.title}`, m2, y2);
+y2 += 8;
+ 
   // >>> ab hier kommt unverändert dein r.photos.forEach(...)-Block <<<
 
  // ------------------------------------------------------
