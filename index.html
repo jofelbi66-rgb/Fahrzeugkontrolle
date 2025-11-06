@@ -634,35 +634,24 @@ let lines = Array.isArray(wrapped)
   ? wrapped
   : String(wrapped).split('\n');
 
+// erste Zeile fett (Überschrift)
 if (lines.length > 0) {
-  // erste Zeile fett (Überschrift)
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
   doc.text(lines[0], textX, textY);
 }
 
-// restliche Zeilen normal oder hervorgehoben
+// restliche Zeilen normal
 if (lines.length > 1) {
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(0, 0, 0);
+
   const restLines = lines.slice(1);
-  let startY = textY + lineH;
+  const startY = textY + lineH;   // lineH kommt aus deinen Konstanten oben
 
-  restLines.forEach(line => {
-    const trimmed = String(line).trim();
-
-    if (trimmed.startsWith('Hinweis:')) {
-      // kleiner Abstand vor Hinweis
-      startY += 1.5;
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(200, 0, 0); // dezent rot
-    } else {
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(0, 0, 0); // Standard schwarz
-    }
-
-    doc.text(trimmed, textX, startY, { lineHeightFactor: 1.0 });
-    startY += lineH;
-  });
+  doc.text(restLines, textX, startY, { lineHeightFactor: 1.0 });
 }
+
 
   y += rowH;
   rowIndex += 1;
