@@ -717,10 +717,7 @@ if (y2 + 10 > pageHeightForHeader - 20) {   // 20 mm Reserve nach unten
   y2 = m2;
 }
 
-// Kleiner Abschnittstitel pro Checkpunkt (ohne "Fotos –")
-doc.setFont('helvetica', 'bold');
-doc.text(it.title, m2, y2);   // <<< nur der Titel
-y2 += 5;
+
 
  
   // >>> ab hier kommt unverändert dein r.photos.forEach(...)-Block <<<
@@ -775,11 +772,13 @@ y2 += 8;                     // etwas Luft unter der Überschrift
       const h = Math.max(1, ih*scale);
 
       // Seitenumbruch falls nötig
-     // Seitenumbruch nur, wenn wirklich zu wenig Platz für das nächste Bild ist
-const bottomMargin = 10; // unterer Rand in mm
+ // Seitenumbruch nur, wenn wirklich zu wenig Platz für das nächste Bild ist
+const bottomMargin = 10;      // unterer Rand in mm
+const topMarginAfterLogo = m2 + 20; // Abstand unterhalb des Logos/Kopfs
+
 if (y2 + h + bottomMargin > pageH2) {
   doc.addPage();
-  y2 = m2;  // wieder an oberen Rand der neuen Seite
+  y2 = topMarginAfterLogo;    // nicht ganz oben starten, sondern unterhalb des Logos
 }
 
 
