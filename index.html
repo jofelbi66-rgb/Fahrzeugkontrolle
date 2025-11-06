@@ -700,13 +700,7 @@ if (state.sig) {
     doc.setFont('helvetica', 'normal');
     doc.text('(keine Signatur einbettbar)', m, sigY + 6);
   }
-}
 
-
-  } catch {
-    doc.setFont('helvetica', 'normal');
-    doc.text('(keine Signatur einbettbar)', m, sigY + 6);
-  }
 } else {
   doc.setDrawColor(200);
   doc.rect(sigX, sigY, sigBoxW, sigBoxH);
