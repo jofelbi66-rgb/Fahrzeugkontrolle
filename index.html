@@ -637,17 +637,32 @@ let lines = Array.isArray(wrapped)
 if (lines.length > 0) {
   // erste Zeile fett (Überschrift)
   doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0, 0, 0);
   doc.text(lines[0], textX, textY);
-
-  // restliche Zeilen normal
-  if (lines.length > 1) {
-    doc.setFont('helvetica', 'normal');
-    const restLines = lines.slice(1);
-    const startY = textY + lineH;   // lineH kommt aus deinen Konstanten oben
-    doc.text(restLines, textX, startY, { lineHeightFactor: 1.0 });
-  }
 }
 
+// restliche Zeilen normal oder hervorgehoben
+if (lines.length > 1) {
+  const restLines = lines.slice(1);
+  let startY = textY + lineH;
+
+  restLines.forEach(line => {
+    const trimmed = String(line).trim();
+
+    if (trimmed.startsWith('Hinweis:')) {
+      // kleiner Abstand vor Hinweis
+      startY += 1.5;
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(200, 0, 0); // dezent rot
+    } else {
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0, 0, 0); // Standard schwarz
+    }
+
+    doc.text(trimmed, textX, startY, { lineHeightFactor: 1.0 });
+    startY += lineH;
+  });
+}
 
   y += rowH;
   rowIndex += 1;
