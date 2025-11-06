@@ -717,9 +717,11 @@ if (y2 + 10 > pageHeightForHeader - 20) {   // 20 mm Reserve nach unten
   y2 = m2;
 }
 
+// Kleiner Abschnittstitel pro Checkpunkt (ohne "Fotos –")
 doc.setFont('helvetica', 'bold');
-doc.text(`Fotos – ${it.title}`, m2, y2);
-y2 += 8;
+doc.text(it.title, m2, y2);   // <<< nur der Titel
+y2 += 5;
+
  
   // >>> ab hier kommt unverändert dein r.photos.forEach(...)-Block <<<
 
