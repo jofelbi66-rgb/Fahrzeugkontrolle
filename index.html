@@ -694,13 +694,33 @@ if (state.sig) {
 
   y = sigY + sigBoxH + 6;
 // ===== Fotos je Checkpunkt als Folgeseiten anfügen =====
-const m2 = m; // Außenrand weiterverwenden
-items.forEach(it=>{
+const m2 = m;              // Außenrand weiterverwenden
+let y2 = m2;               // aktuelle Y-Position auf Fotoseiten
+let photoPageStarted = false;  // merken, ob wir schon auf einer Fotoseite sind
+
+items.forEach(it => {
   const r = state.res[it.id] || {};
   if (!r.photos || !r.photos.length) return;
 
-  doc.addPage();
-  let y2 = m2;
+  // Erste Fotoseite nur EINMAL anlegen
+  if (!photoPageStarted) {
+    doc.addPage();
+    photoPageStarted = true;
+    y2 = m2;               // Start oben auf der erste Fotoseite
+  }
+
+  // --- Überschrift für diesen Fotoblock ---
+  // Falls die Überschrift am Seitenende landen würde: neue Seite
+  if (y2 + 10 > pageH2 - 20) {   // pageH2: deine Foto-Seitenhöhe, 20 mm Reserve unten
+    doc.addPage();
+    y2 = m2;
+  }
+
+  doc.setFont('helvetica', 'bold');
+  doc.text(`Fotos – ${it.title}`, m2, y2);
+  y2 += 8;
+
+  // >>> ab hier kommt unverändert dein r.photos.forEach(...)-Block <<<
 
  // ------------------------------------------------------
 // ------------------------------------------------------
