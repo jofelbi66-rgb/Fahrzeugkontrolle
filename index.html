@@ -646,10 +646,23 @@ if (lines.length > 1) {
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(0, 0, 0);
 
-  const restLines = lines.slice(1);
-  const startY = textY + lineH;   // lineH kommt aus deinen Konstanten oben
+const restLines = lines.slice(1);
+let startY = textY + lineH; // Zeilenhöhe wie gehabt
 
-  doc.text(restLines, textX, startY, { lineHeightFactor: 1.0 });
+restLines.forEach(line => {
+  const trimmed = String(line).trim();
+
+  // Wenn die Zeile mit "Hinweis:" beginnt → Icon davor
+  if (trimmed.toLowerCase().startsWith('hinweis:')) {
+    const warnIcon = '⚠';
+    doc.text(`${warnIcon} ${trimmed}`, textX, startY);
+  } else {
+    doc.text(trimmed, textX, startY);
+  }
+
+  startY += lineH; // Zeilenhöhe beibehalten
+});
+  
 }
 
 
