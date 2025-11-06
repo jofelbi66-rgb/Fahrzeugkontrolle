@@ -598,7 +598,11 @@ const txt = base + (note && note !== desc ? `\nHinweis: ${note}` : '');
 
 // Text umbrechen wie gehabt
 doc.setFont('helvetica', 'normal');
-const wrapped = doc.splitTextToSize(txt, colW.text - 10);
+
+// schmalere Spaltenbreite verwenden, wenn es einen Hinweis gibt
+const wrapWidth = note ? colW.text * 0.6 : (colW.text - 4);
+
+const wrapped = doc.splitTextToSize(txt, wrapWidth);
 const rowH = Math.max(rowMin, padV + wrapped.length * lineH);
 
 
