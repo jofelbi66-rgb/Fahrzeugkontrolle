@@ -599,10 +599,7 @@ const txt = base + (note && note !== desc ? `\nHinweis: ${note}` : '');
 // Text umbrechen wie gehabt
 doc.setFont('helvetica', 'normal');
 
-// schmalere Spaltenbreite verwenden, wenn es einen Hinweis gibt
-const wrapWidth = note ? colW.text * 0.6 : (colW.text - 4);
-
-const wrapped = doc.splitTextToSize(txt, wrapWidth);
+const wrapped = doc.splitTextToSize(txt, colW.text - 4);
 const rowH = Math.max(rowMin, padV + wrapped.length * lineH);
 
 
@@ -637,8 +634,7 @@ doc.text(String(fotos), x.foto   + 2, y + 7);
 
 
 
-
-// Checkpoint-Text: erste Zeile fett, Rest normal – Hinweiszeile orange
+// Checkpoint-Text: erste Zeile fett, Rest normal – Hinweiszeile orange + kleiner
 const textX = x.text + 2;
 let textY = y + 7;
 
@@ -650,24 +646,26 @@ const lines = Array.isArray(wrapped)
 // 1. Zeile (Titel) fett, immer schwarz
 if (lines.length > 0) {
   doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
   doc.text(lines[0], textX, textY);
   textY += lineH;
 }
 
-// Restzeilen normal, ggf. Hinweis orange
+// Restzeilen normal, ggf. Hinweis orange & kleiner
 doc.setFont('helvetica', 'normal');
 
 for (let i = 1; i < lines.length; i++) {
-  const line = lines[i];
+  const line = lines[i].trim();
 
-  // Hinweis-Zeile farbig hervorheben
-  if (/^Hinweis:/i.test(line.trim())) {
-    // Orange
+  if (/^Hinweis:/i.test(line)) {
+    // Hinweis -> Orange & kleinere Schrift
     doc.setTextColor(255, 140, 0);
+    doc.setFontSize(9);          // 👈 hier kleinere Schrift
   } else {
-    // Normaler Text
+    // Normale Zeile
     doc.setTextColor(0, 0, 0);
+    doc.setFontSize(10);         // Standardgröße
   }
 
   doc.text(line, textX, textY);
@@ -676,6 +674,9 @@ for (let i = 1; i < lines.length; i++) {
 
 // Farbe fürs restliche PDF wieder auf Schwarz setzen
 doc.setTextColor(0, 0, 0);
+doc.setFontSize(10);
+
+
 
 // danach geht es weiter wie gehabt:
   y += rowH;
