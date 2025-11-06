@@ -588,12 +588,12 @@ const fotos  = photos.length ? `ja (${photos.length})` : '-';
 
 // Beschreibung & Hinweistext
 const desc = (it.description || '').trim();   // unsere Prüfpunkte
-const note = (r.note || '').trim();          // Fahrer-Bemerkung
+const note = (r.note || '').trim();           // Fahrer-Bemerkung
 
 // Basistext: Titel + Beschreibung
 const base = it.title + (desc ? `\n${desc}` : '');
 
-// Volltext inkl. Hinweis (Hinweis nur, wenn abweichend)
+// kompletter Text inkl. Hinweis-Zeile (nur wenn note vom desc abweicht)
 const txt = base + (note && note !== desc ? `\nHinweis: ${note}` : '');
 
 // Text umbrechen wie gehabt
@@ -634,45 +634,46 @@ doc.text(String(fotos), x.foto   + 2, y + 7);
 
 
 
-
-// ===== Checkpoint-Text: erste Zeile fett, Rest normal =====
-
+// Checkpoint-Text: erste Zeile fett, Rest normal – Hinweiszeile orange
 const textX = x.text + 2;
-const textY = y + 7;
+let textY = y + 7;
 
-// wrapped in sauberes Array verwandeln
+// wrapped kann String oder Array sein -> vereinheitlichen
 const lines = Array.isArray(wrapped)
   ? wrapped
   : String(wrapped).split('\n');
 
-// 1. Zeile (Titel) fett, schwarz
+// 1. Zeile (Titel) fett, immer schwarz
 if (lines.length > 0) {
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
   doc.text(lines[0], textX, textY);
+  textY += lineH;
 }
 
-// übrige Zeilen normal, Hinweiszeile orange
-if (lines.length > 1) {
-  doc.setFont('helvetica', 'normal');
-  let curY = textY + lineH;
+// Restzeilen normal, ggf. Hinweis orange
+doc.setFont('helvetica', 'normal');
 
-  for (let i = 1; i < lines.length; i++) {
-    const line = String(lines[i]);
-    const trimmed = line.trim().toLowerCase();
+for (let i = 1; i < lines.length; i++) {
+  const line = lines[i];
 
-    // Zeile beginnt mit "Hinweis:" → orange
-    if (trimmed.startsWith('hinweis:')) {
-      doc.setTextColor(255, 140, 0);        // Orange
-      // Wenn du lieber Blau willst:
-      // doc.setTextColor(0, 102, 204);
-    } else {
-      doc.setTextColor(0, 0, 0);            // normal schwarz
-    }
-
-    doc.text(line, textX, curY);
-    curY += lineH;
+  // Hinweis-Zeile farbig hervorheben
+  if (/^Hinweis:/i.test(line.trim())) {
+    // Orange
+    doc.setTextColor(255, 140, 0);
+  } else {
+    // Normaler Text
+    doc.setTextColor(0, 0, 0);
   }
+
+  doc.text(line, textX, textY);
+  textY += lineH;
+}
+
+// Farbe fürs restliche PDF wieder auf Schwarz setzen
+doc.setTextColor(0, 0, 0);
+
+
 
   // Sicherheitshalber wieder auf Schwarz zurück
   doc.setTextColor(0, 0, 0);
