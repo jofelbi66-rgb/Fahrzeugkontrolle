@@ -725,7 +725,7 @@ items.forEach(it=>{
 
       // Skaliert, ohne zu groß zu werden
       let scale = Math.min(maxW/iw, maxH/ih);
-      scale *= 0.80; // kleine Drossel für Dateigröße
+      scale *= 0.50; // kleine Drossel für Dateigröße
       const w = Math.max(1, iw*scale);
       const h = Math.max(1, ih*scale);
 
@@ -740,11 +740,11 @@ if (y2 + h + bottomMargin > pageH2) {
 
       const x2 = m2 + (maxW - w)/2;
       doc.addImage(p, 'JPEG', x2, y2, w, h);
-      y2 += h + 6;
+      y2 += h + 4;
     }catch(_){
       doc.setFont('helvetica','normal');
       doc.text('(Foto konnte nicht eingebettet werden)', m2, y2);
-      y2 += 8;
+      y2 += 6;
     }
   });
 });
