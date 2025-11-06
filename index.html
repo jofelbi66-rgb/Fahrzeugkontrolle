@@ -595,17 +595,27 @@ if (/^&/.test(note)) {
   note = note.replace(/^&\s*/, '⚠ ');
 }
 
-// Basistext (Titel + Beschreibung)
+// Basisteil (Titel + Beschreibung)
 const base = it.title + (desc ? `\n${desc}` : '');
+let txt = base;
 
 // Hinweis farbig hervorheben, nur wenn er vom desc abweicht
-let txt = base;
 if (note && note !== desc) {
-  // Farbe wählen – Orange: [255,140,0], Blau: [0,102,204]
-  doc.setTextColor(255, 140, 0);
-  txt += `\n${note}`;
+  // Standardtext zuerst
+  doc.setTextColor(0, 0, 0);
+  doc.text(base, x.text + 2, y + 5);
+
+  // Dann Hinweis in Orange oder Blau
+  doc.setTextColor(255, 140, 0); // Orange
+  // doc.setTextColor(0, 102, 204); // Alternative: Blau
+  doc.text(note, x.text + 2, y + 5 + lineH); // eine Zeile tiefer
   doc.setTextColor(0, 0, 0); // danach wieder Schwarz
+} else {
+  // kein Hinweis → normaler Text
+  doc.setTextColor(0, 0, 0);
+  doc.text(txt, x.text + 2, y + 5);
 }
+
 
 
   doc.setFont('helvetica','normal');
