@@ -730,7 +730,13 @@ items.forEach(it=>{
       const h = Math.max(1, ih*scale);
 
       // Seitenumbruch falls nötig
-      if (y2 + h > pageH2 - m2) { doc.addPage(); y2 = m2; }
+     // Seitenumbruch nur, wenn wirklich zu wenig Platz für das nächste Bild ist
+const bottomMargin = 10; // unterer Rand in mm
+if (y2 + h + bottomMargin > pageH2) {
+  doc.addPage();
+  y2 = m2;  // wieder an oberen Rand der neuen Seite
+}
+
 
       const x2 = m2 + (maxW - w)/2;
       doc.addImage(p, 'JPEG', x2, y2, w, h);
