@@ -586,12 +586,24 @@ const sev = status;  // <<< Back-Compat: für alte sev-Verwendungen im PDF
 const fotos  = photos.length ? `ja (${photos.length})` : '-';
  
 
-  const desc = (it.description || '').trim();         // unsere Prüfpunkte
-const note = (r.note || '').trim();                 // Fahrer-Bemerkung
+const desc = (it.description || '').trim();
 
-// Titel + Prüfpunkte immer ausgeben, Hinweis nur bei abweichender Eingabe
-const base = it.title + (desc ? `\n${desc}` : '');
-const txt  = base + (note && note !== desc ? `\nHinweis: ${note}` : '');
+// Hinweis-Text holen
+let note = (r.note || '').trim();
+
+// 1) Wenn Hinweis mit "&" beginnt → & durch ⚠ ersetzen, Rest *unverändert* lassen
+//    Beispiel Eingabe: "& Prüfdatum abgelaufen!"
+//    Ausgabe:          "⚠ Prüfdatum abgelaufen!"
+if (/^&/.test(note)) {
+  note = note.replace(/^&\s*/, '⚠ ');
+}
+
+// 2) Basistext (Titel + Beschreibung) wie gehabt
+const base = it.title + (desc ? '\n' + desc : '');
+
+// 3) Hinweiszeile nur anhängen, wenn note vom desc abweicht
+const txt = base + (note && note !== desc ? '\n' + note : '');
+
 
   doc.setFont('helvetica','normal');
   const wrapped = doc.splitTextToSize(txt, colW.text - 4);
@@ -646,14 +658,8 @@ if (lines.length > 1) {
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(0, 0, 0);
 
-const restLines = lines.slice(1).map(line => {
-  const txt = String(line);
-  // Wenn Zeile (nach Trim) mit "Hinweis:" beginnt → Wort durch Symbol ersetzen
-  if (txt.trim().toLowerCase().startsWith('hinweis:')) {
-    return txt.replace(/hinweis:/i, '⚠');
-  }
-  return txt;
-});
+const restLines = lines.slice(1);
+
 
 const startY = textY + lineH;  // wie vorher
 doc.text(restLines, textX, startY, { lineHeightFactor: 1.0 });
