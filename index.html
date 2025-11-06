@@ -617,11 +617,37 @@ const txt  = base + (note && note !== desc ? `\nHinweis: ${note}` : '');
   doc.setFillColor(zeb[0], zeb[1], zeb[2]);
   doc.rect(m, y, pageW - 2*m, rowH, 'F');
 
-  // Zelltexte (leicht höher gesetzt für bessere Optik)
-  doc.setTextColor(0,0,0);
-  doc.text(String(sev),       x.status + 2, y + 7);
-  doc.text(wrapped,           x.text   + 2, y + 7);
-  doc.text(String(fotos),     x.foto   + 2, y + 7);
+// Zelltexte (leicht höher gesetzt für bessere Optik)
+doc.setTextColor(0, 0, 0);
+
+// Status und Foto ganz normal
+doc.setFont('helvetica', 'normal');
+doc.text(String(sev),   x.status + 2, y + 7);
+doc.text(String(fotos), x.foto   + 2, y + 7);
+
+// Checkpoint-Text: erste Zeile fett, Rest normal
+const textX = x.text + 2;
+const textY = y + 7;
+
+// wrapped kann String oder Array sein -> vereinheitlichen
+let lines = Array.isArray(wrapped)
+  ? wrapped
+  : String(wrapped).split('\n');
+
+if (lines.length > 0) {
+  // erste Zeile fett (Überschrift)
+  doc.setFont('helvetica', 'bold');
+  doc.text(lines[0], textX, textY);
+
+  // restliche Zeilen normal
+  if (lines.length > 1) {
+    doc.setFont('helvetica', 'normal');
+    const restLines = lines.slice(1);
+    const startY = textY + lineH;   // lineH kommt aus deinen Konstanten oben
+    doc.text(restLines, textX, startY, { lineHeightFactor: 1.0 });
+  }
+}
+
 
   y += rowH;
   rowIndex += 1;
