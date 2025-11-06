@@ -501,6 +501,9 @@ function validateBeforeSend() {
 function buildPdf() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit:'mm', format:'a4', compress:true });
+  // Standard-Schriftart und -größe für das ganze PDF
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);   // vorher war der Default größer
     const dateField = document.getElementById('inDate');
   const dtDisplay = dateField && dateField.value ? dateField.value : formatNowForDisplay();
 
@@ -522,17 +525,24 @@ function buildPdf() {
 
   const line=(txt,bold=false)=>{ doc.setFont('helvetica', bold?'bold':'normal'); doc.text(String(txt||''), m, y); y+=6; };
 
- // Kopf
+// Kopf
+doc.setFont('helvetica', 'bold');
+doc.setFontSize(12);                   // vorher 14 o.ä.
 line('Fahrzeugkontrolle – Schwerlast/Zugmaschine', true);
 
+doc.setFont('helvetica', 'normal');
+doc.setFontSize(9);                    // vorher 11
 line(`Datum/Uhrzeit: ${dtDisplay}`);
 
 line(`Fahrer/in: ${document.getElementById('inOp')?.value || ''}`);
 line(`Zugmaschine: ${document.getElementById('inTr')?.value || ''} | Auflieger/Modul: ${document.getElementById('inTl')?.value || ''}`);
+
 const locVal = document.getElementById('inLoc')?.value || '';
 if (locVal) line(`Ort: ${locVal}`);
+
 if (state.geo) line(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
-y += 2;
+
+y += 3;   // kleinerer Abstand nach unten (vorher 5–6)
 
   
  // Tabelle
