@@ -661,11 +661,11 @@ for (let i = 1; i < lines.length; i++) {
   if (/^Hinweis:/i.test(line)) {
     // Hinweis -> Orange & kleinere Schrift
     doc.setTextColor(255, 140, 0);
-    doc.setFontSize(9);          // 👈 hier kleinere Schrift
+    doc.setFontSize(8);          // 👈 hier kleinere Schrift
   } else {
     // Normale Zeile
     doc.setTextColor(0, 0, 0);
-    doc.setFontSize(10);         // Standardgröße
+    doc.setFontSize(9);         // Standardgröße
   }
 
   doc.text(line, textX, textY);
