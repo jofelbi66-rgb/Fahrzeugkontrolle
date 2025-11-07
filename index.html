@@ -652,29 +652,36 @@ if (lines.length > 0) {
   textY += lineH;
 }
 
-// Restzeilen normal, ggf. Hinweis orange & kleiner
+// Restzeilen normal, ggf. Hinweis orange
 doc.setFont('helvetica', 'normal');
 
+const hintExtraGap = 2;   // zusätzlicher Abstand unter der Hinweiszeile in mm
+const hintTopShift = 1;   // Hinweis minimal tiefer setzen (optischer Abstand nach oben)
+
 for (let i = 1; i < lines.length; i++) {
-  const line = lines[i].trim();
+  const line = String(lines[i]);
+  const isHint = /^Hinweis:/i.test(line.trim());
 
-  if (/^Hinweis:/i.test(line)) {
-    // Hinweis -> Orange & kleinere Schrift
+  if (isHint) {
+    // Hinweis in Orange
     doc.setTextColor(255, 140, 0);
-    doc.setFontSize(8);          // 👈 hier kleinere Schrift
-  } else {
-    // Normale Zeile
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(9);         // Standardgröße
-  }
 
-  doc.text(line, textX, textY);
-  textY += lineH;
+    // leicht tiefer setzen, damit Abstand zum Bullet davor entsteht
+    doc.text(line, textX, textY + hintTopShift);
+
+    // nach unten etwas mehr Abstand lassen
+    textY += lineH + hintExtraGap;
+  } else {
+    // normale Zeile
+    doc.setTextColor(0, 0, 0);
+    doc.text(line, textX, textY);
+    textY += lineH;
+  }
 }
 
 // Farbe fürs restliche PDF wieder auf Schwarz setzen
 doc.setTextColor(0, 0, 0);
-doc.setFontSize(10);
+
 
 
 
