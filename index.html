@@ -1388,6 +1388,28 @@ window.addEventListener('DOMContentLoaded', ()=>{
   // Buttons
   document.getElementById('btnPdf') ?.addEventListener('click', onPdf);
   document.getElementById('btnMail')?.addEventListener('click', onMail);
+  // Reset-Button: Checkliste löschen
+const btnReset = document.getElementById('btnReset');
+if (btnReset) {
+    btnReset.addEventListener('click', () => {
+        const ok = confirm(
+            'Sollen alle Einträge der Checkliste (Status, Hinweise, Fotos) wirklich gelöscht werden?\n' +
+            'Fahrername und digitale Unterschrift bleiben erhalten.'
+        );
+        if (!ok) return;
+
+        try {
+            // nur den Checklisten-State löschen
+            localStorage.removeItem(SKEY);
+        } catch (e) {
+            console.warn('Konnte lokalen Checklisten-Status nicht löschen:', e);
+        }
+
+        // Seite neu laden
+        location.reload();
+    });
+}
+
 const btnGeo  = document.getElementById('btnGeo');
 if (btnGeo && typeof window.onGeo === 'function') {
   btnGeo.addEventListener('click', window.onGeo);
