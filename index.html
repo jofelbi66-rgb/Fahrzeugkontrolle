@@ -209,12 +209,14 @@ let lastPdfDriver = '';
       <h1>Fahrzeugkontrolle – Schwerlast/Zugmaschine</h1>
 
     
+<div class="row">
+  <button class="btn" id="btnGeo">GPS-Ort</button>
+  <button class="btn" id="btnPdf">PDF speichern</button>
+  <button class="btn" id="btnMail">An Dispo (E-Mail + PDF)</button>
+  <button class="btn" id="btnReset" onclick="confirmReset()">Reset</button>
+</div>
 
-      <div class="row">
-        <button class="btn" id="btnGeo">GPS-Ort</button>
-        <button class="btn" id="btnPdf">PDF speichern</button>
-        <button class="btn" id="btnMail">An Dispo (E-Mail + PDF)</button>
-      </div>
+
     </div>
   </header>
 
@@ -1206,6 +1208,47 @@ taEl.addEventListener('input', (e) => {
     });
   });
 }
+// === RESET-FUNKTION ==================================
+function resetChecklist() {
+  // 1. Checkboxen und Radiobuttons zurücksetzen
+  document
+    .querySelectorAll('input[type="checkbox"], input[type="radio"]')
+    .forEach(el => { el.checked = false; });
+
+  // 2. Texteingaben & Textareas leeren – aber Fahrername behalten
+  document
+    .querySelectorAll('input[type="text"], textarea')
+    .forEach(el => {
+      if (el.id === 'inOp') return; // Fahrername behalten
+      el.value = '';
+    });
+
+  // 3. Fotos löschen (DOM + Speicher)
+  document.querySelectorAll('[id^="ph_"]').forEach(div => {
+    div.innerHTML = '';
+  });
+
+  
+
+  // 5. localStorage aufräumen – aber Fahrername behalten
+  Object.keys(localStorage).forEach(key => {
+    if (key !== 'driverName') {
+      localStorage.removeItem(key);
+    }
+  });
+
+  // 6. Interne Zustände zurücksetzen (auch Fotos!)
+  if (window.state) {
+    if (state.res) state.res = {};
+    if (state.photos) state.photos = {};
+  }
+
+  // 7. Checkliste neu aufbauen
+  renderChecklist();
+
+  console.log('Checkliste und Fotos zurückgesetzt – Fahrername bleibt gespeichert.');
+}
+// =====================================================
 
 function redrawPhotos(id){
   const bar = document.getElementById('ph_'+id);
