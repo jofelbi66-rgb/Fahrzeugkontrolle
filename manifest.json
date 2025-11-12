@@ -1,7 +1,7 @@
 {
   "name": "Fahrzeugkontrolle",
   "short_name": "Fahrzeug-App",
-  "start_url": "/Fahrzeugkontrolle/",
+  "start_url": "/Fahrzeugkontrolle/index.html",
   "scope": "/Fahrzeugkontrolle/",
   "display": "standalone",
   "background_color": "#ffffff",
