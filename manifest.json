@@ -8,12 +8,12 @@
   "description": "Checkliste für Fahrzeugkontrolle vor Fahrtbeginn",
   "icons": [
     {
-      "src": "https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/felbermayr_logo.png",
+      "src": "icon.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://jofelbi66-rgb.github.io/Fahrzeugkontrolle/felbermayr_logo.png",
+      "src": "icon.png",
       "sizes": "512x512",
       "type": "image/png"
     }
