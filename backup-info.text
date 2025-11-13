@@ -1,0 +1,10 @@
+Backup-Stand: 12.11.2025
+Projekt: Fahrzeugkontrolle (GitHub Pages)
+Gesicherter Zustand:
+- Icons korrigiert und im Manifest eingebunden
+- App funktioniert als PWA
+- Layout aktuell (Buttons, Farben, Checkliste)
+- Reset-Funktion in Arbeit
+
+Backup liegt lokal unter:
+C:\Projekte\Fahrzeugkontrolle_Backup\2025-11-12\
