@@ -391,7 +391,7 @@ const items = [
     title: "Umwelt- & Leckageschutz",
     
      description:
-      "Prüfe:\n- Keine Leckagen an Hydraulik, Motor oder Getriebe\n- Öl- und Kraftstoffbehälter dicht\n- Auffangsysteme korrekt positioniert und leer\n- Keine Flüssigkeiten auf der Ladefläche oder im Umfeld\n- Umweltgefährdende Stoffe ordnungsgemäß gesichert",
+      "Prüfe:\n- Keine Leckagen an Hydraulik, Motor oder Getriebe\n- Öl- und Kraftstoffbehälter dicht\n- Keine Flüssigkeiten auf der Ladefläche oder im Umfeld\n- Umweltgefährdende Stoffe ordnungsgemäß gesichert",
     category: "Umwelt"
   },
   {
@@ -604,6 +604,13 @@ const padV   = 3;      // statt 5
 // etwas weniger Reserve für die Unterschrift
 const reserveForSignature = 50; // statt 70
 
+// Fahrtart & Los im Kopf ausgeben
+doc.setFontSize(9);
+doc.setFont('helvetica', 'normal');
+doc.text(`Fahrtart: ${tpt}`, m, y);
+y += 4;
+doc.text(`Los: ${lot}`, m, y);
+y += 6;   // kleiner Abstand zur Tabelle
 
 // Tabellenkopf
 doc.setDrawColor(200); 
