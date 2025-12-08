@@ -570,11 +570,11 @@ function buildPdf() {
 
 // Kopf
 doc.setFont('helvetica', 'bold');
-doc.setFontSize(12);                   // vorher 14 o.ä.
+doc.setFontSize(12);                              // vorher 14 o.ä.
 line('Fahrzeugkontrolle – Schwerlast/Zugmaschine', true);
 
 doc.setFont('helvetica', 'normal');
-doc.setFontSize(9);                    // vorher 11
+doc.setFontSize(9);                               // vorher 11
 line(`Datum/Uhrzeit: ${dtDisplay}`);
 
 line(`Fahrer/in: ${document.getElementById('inOp')?.value || ''}`);
@@ -583,9 +583,16 @@ line(`Zugmaschine: ${document.getElementById('inTr')?.value || ''} | Auflieger/M
 const locVal = document.getElementById('inLoc')?.value || '';
 if (locVal) line(`Ort: ${locVal}`);
 
+// NEU: Fahrtart & Los
+const tripTypeVal = document.getElementById('inTripType')?.value || '';
+if (tripTypeVal) line(`Fahrtart: ${tripTypeVal}`);
+
+const lotVal = document.getElementById('inLot')?.value || '';
+if (lotVal) line(`Los: ${lotVal}`);
+
 if (state.geo) line(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
 
-y += 3;   // kleinerer Abstand nach unten (vorher 5–6)
+y += 3;                                          // kleinerer Abstand nach unten (vorher 5–6)
 
   
  // Tabelle
@@ -604,13 +611,7 @@ const padV   = 3;      // statt 5
 // etwas weniger Reserve für die Unterschrift
 const reserveForSignature = 50; // statt 70
 
-// Fahrtart & Los im Kopf ausgeben
-doc.setFontSize(9);
-doc.setFont('helvetica', 'normal');
-doc.text(`Fahrtart: ${tpt}`, m, y);
-y += 4;
-doc.text(`Los: ${lot}`, m, y);
-y += 6;   // kleiner Abstand zur Tabelle
+
 
 // Tabellenkopf
 doc.setDrawColor(200); 
