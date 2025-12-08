@@ -1077,6 +1077,8 @@ const driverName = document.getElementById('inOp')?.value  || '';
 const truck      = document.getElementById('inTr')?.value  || '';
 const trailer    = document.getElementById('inTl')?.value  || '';
 const location   = document.getElementById('inLoc')?.value || '';
+const tripType   = document.getElementById('inTripType')?.value || '';
+const lot        = document.getElementById('inLot')?.value || '';
 
 // Geo-Tag wie im PDF
 const geoTag = (state.geo && state.geo.lat && state.geo.lon)
@@ -1105,7 +1107,7 @@ const payload = {
   cc,
   bcc,
   subject,
-  text: body,      // bleibt wie gehabt
+  text: fullbody,      // bleibt wie gehabt
   html,
   filename,
   pdfBase64: base64,
@@ -1115,6 +1117,8 @@ const payload = {
   truck,
   trailer,
   location,
+  tripType,
+  lot,
   geoTag,
   checkItems,
   overallSev      // den hast du weiter oben schon berechnet
