@@ -234,19 +234,58 @@ let lastPdfDriver = '';
       <label><span>BCC (optional)</span><input id="inBcc" placeholder="bcc@firma.de"></label>
       <p class="help">Versand per Google-Relay mit PDF-Anhang. Adressen werden nur lokal gespeichert.</p>
     </section>
+<section>
+    <h2>Fahrzeugdaten</h2>
+    <div class="grid grid-2">
+        <label>
+            <span>Datum/Uhrzeit</span>
+            <input id="inDate" type="text" placeholder="Datum / Uhrzeit">
+        </label>
+        <label>
+            <span>Fahrer/in *</span>
+            <input id="inOp" placeholder="Fahrer/in">
+        </label>
+        <label>
+            <span>Zugmaschine *</span>
+            <input id="inTr" placeholder="z. B. DN-AB 1234">
+        </label>
+        <label>
+            <span>Auflieger/Modul *</span>
+            <input id="inTl" placeholder="…">
+        </label>
+        <label class="grid-col-span-2">
+            <span>Ort</span>
+            <input id="inLoc" placeholder="automatisch per GPS oder manuell">
+        </label>
 
-    <section>
-      <h2>Fahrzeugdaten</h2>
-      <div class="grid grid-2">
-        <label><span>Datum/Uhrzeit</span><input id="inDate" type="text" placeholder="Datum / Uhrzeit"></label>
-        <label><span>Fahrer/in *</span><input id="inOp" placeholder="Fahrer/in"></label>
-        <label><span>Zugmaschine *</span><input id="inTr" placeholder="z.B. DN-AB 1234"></label>
-        <label><span>Auflieger/Modul *</span><input id="inTl" placeholder="…"></label>
-        <label class="grid-col-span-2"><span>Ort</span><input id="inLoc" placeholder="automatisch per GPS oder manuell"></label>
-      </div>
-      <div class="status" id="geoOut" style="margin-top:6px"></div>
-    </section>
+        <!-- NEU: Fahrtart -->
+        <label>
+            <span>Fahrtart *</span>
+            <select id="inTripType" required>
+                <option value="">Bitte wählen</option>
+                <option value="Lastfahrt">Lastfahrt</option>
+                <option value="Leerfahrt">Leerfahrt</option>
+            </select>
+        </label>
 
+        <!-- NEU: Los -->
+        <label>
+            <span>Los *</span>
+            <select id="inLot" required>
+                <option value="">Bitte wählen</option>
+                <option value="Los 4.1">Los 4.1</option>
+                <option value="Los 4.2">Los 4.2</option>
+                <option value="Los 4.3">Los 4.3</option>
+                <option value="Los 4.4">Los 4.4</option>
+                <option value="Los 4.5">Los 4.5</option>
+            </select>
+        </label>
+    </div>
+
+    <div class="status" id="geoOut" style="margin-top:6px">x</div>
+</section>
+
+   
     <section>
       <h2>Logo für Bericht (optional)</h2>
       <div class="row">
@@ -906,11 +945,16 @@ function validateBeforeSend() {
   const drv  = document.getElementById('inOp')  ?.value.trim() || '';
   const trk  = document.getElementById('inTr')  ?.value.trim() || '';
   const tlr  = document.getElementById('inTl')  ?.value.trim() || '';
+const tpt = document.getElementById('inTripType')?.value.trim() || '';
+const lot = document.getElementById('inLot')?.value.trim() || '';
 
   if (!dt)  errors.push('• Datum/Uhrzeit');
   if (!drv) errors.push('• Fahrer/in');
   if (!trk) errors.push('• Zugmaschine');
   if (!tlr) errors.push('• Auflieger/Modul');
+  if (!tpt) errors.push('• Fahrtart');
+if (!lot) errors.push('• Los');
+
 
   // Pflicht-Checkpunkte (items mit req === true)
   const missingChecks = items
@@ -974,6 +1018,9 @@ const dtMail = dateField && dateField.value
 const tr = document.getElementById('inTr')?.value || 'Zugmaschine';
 const tl = document.getElementById('inTl')?.value || 'Auflieger/Modul';
 const drv = document.getElementById('inOp')?.value || 'Fahrer/in';
+const tpt = document.getElementById('inTripType')?.value || 'Fahrtart';
+const lot = document.getElementById('inLot')     ?.value || 'Los';
+    
 
 
 // Gesamtstatus automatisch ermitteln: Mangel > Hinweis > OK
@@ -1006,7 +1053,8 @@ if (overallSev === 'Mangel') {
 
 // Neuer Betreff
 const subject =
-  `[Fahrzeugkontrolle] ${overallSev} – ${tr} / ${tl} – ${dtMail} – ${drv}`;
+`[Fahrzeugkontrolle] ${overallSev} - ${tr} / ${tl} - ${tpt} - ${lot} - ${dtMail} - ${drv}`;
+
 
 // Dateiname aufräumen (keine Sonderzeichen)
 const safeDate = dtMail.replace(/[^\wäöüÄÖÜß]+/g, '_');
