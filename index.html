@@ -270,14 +270,17 @@ let lastPdfDriver = '';
 
         <!-- NEU: Los -->
         <label>
-            <span>Los *</span>
-            <select id="inLot" required>
-                <option value="">Bitte wählen</option>
-                <option value="Los 4.1">Los 4.1</option>
-                <option value="Los 4.2">Los 4.2</option>
-               
-            </select>
-        </label>
+    <span>Los (optional)</span>
+    <select id="inLot">
+        <option value="">kein Los ausgewählt</option>
+        <option value="Los 4.1">Los 4.1</option>
+        <option value="Los 4.2">Los 4.2</option>
+        <option value="Los 4.3">Los 4.3</option>
+        <option value="Los 4.4">Los 4.4</option>
+        <option value="Los 4.5">Los 4.5</option>
+    </select>
+</label>
+
     </div>
 
     <div class="status" id="geoOut" style="margin-top:6px">x</div>
@@ -960,7 +963,7 @@ const lot = document.getElementById('inLot')?.value.trim() || '';
   if (!trk) errors.push('• Zugmaschine');
   if (!tlr) errors.push('• Auflieger/Modul');
   if (!tpt) errors.push('• Fahrtart');
-if (!lot) errors.push('• Los');
+
 
 
   // Pflicht-Checkpunkte (items mit req === true)
