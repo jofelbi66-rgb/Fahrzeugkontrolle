@@ -1092,18 +1092,23 @@ const tripType   = document.getElementById('inTripType')?.value || '';
 
 
 // Body um Fahrzeugdaten erweitern
-const extraInfo = [
+const extraInfoLines = [
     '',
     '--- Fahrzeugdaten ---',
     `Fahrer/in:       ${driverName}`,
     `Zugmaschine:     ${truck}`,
     `Auflieger/Modul: ${trailer}`,
     `Ort:             ${location}`,
-    `Fahrtart:        ${tripType}`,
-    `Los:             ${lot}`
-].join('\n');
+    `Fahrtart:        ${tripType}`
+];
 
-const fullBody = body + '\n\n' + extraInfo;
+if (lot) {
+    extraInfoLines.push(`Los:             ${lot}`);
+}
+
+const extraInfo = extraInfoLines.join('\n');
+const fullBody  = body + '\n\n' + extraInfo;
+
 
 // Geo-Tag wie im PDF
 const geoTag = (state.geo && state.geo.lat && state.geo.lon)
