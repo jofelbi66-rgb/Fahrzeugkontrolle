@@ -1062,8 +1062,9 @@ if (overallSev === 'Mangel') {
    
 
 // Neuer Betreff
+const lotPart = lot ? ` - ${lot}` : '';
 const subject =
-`[Fahrzeugkontrolle] ${overallSev} - ${tr} / ${tl} - ${tpt} - ${lot} - ${dtMail} - ${drv}`;
+`[Fahrzeugkontrolle] ${overallSev} - ${tr} / ${tl} - ${tpt}${lotPart} - ${dtMail} - ${drv}`;
 
 
 // Dateiname aufräumen (keine Sonderzeichen)
