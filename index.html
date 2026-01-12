@@ -1185,6 +1185,7 @@ if (statusEl) statusEl.textContent = ''; // Statusmeldung zurücksetzen
   return;                      // Versand abbrechen
 }
 // ------------------------------------------------
+const statusEl = document.getElementById('status');
 
 try {
   await fetch(RELAY_URL, {
@@ -1195,24 +1196,18 @@ try {
   });
 
   // Wenn kein Fehler geflogen ist, betrachten wir den Versand als angestoßen
-  if (s) s.textContent = 'Versand angestoßen.';
+if (statusEl) statusEl.textContent = 'Versand angestoßen.';
 
 } catch (err) {
   console.error(err);
   alert('Fehler beim Versand: ' + (err?.message || err));
 
-  const s = document.getElementById('status');
-  if (s) s.textContent = '';
+  if (statusEl) statusEl.textContent = '';
+                                                                               
 }
 
 
 
-  } catch (err){
-    console.error(err);
-    alert('Fehler beim Versand: ' + (err?.message || err));
-    const s = document.getElementById('status'); if (s) s.textContent = '';
-  }
-}
 
 
 // === CHECKLISTE + HILFSFUNKTIONEN ===
