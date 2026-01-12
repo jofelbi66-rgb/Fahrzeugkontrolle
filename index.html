@@ -212,7 +212,8 @@ let lastPdfDriver = '';
 
     
 <div class="row">
-  <button class="btn" id="btnGeo">GPS-Ort</button>
+<button class="btn" id="btnGeo">GPS-Startort</button>
+
   <button class="btn" id="btnPdf">PDF speichern</button>
   <button class="btn" id="btnMail">An Dispo (E-Mail + PDF)</button>
   <button class="btn" id="btnReset" onclick="confirmReset()">Reset</button>
@@ -253,10 +254,15 @@ let lastPdfDriver = '';
             <span>Auflieger/Modul *</span>
             <input id="inTl" placeholder="…">
         </label>
-        <label class="grid-col-span-2">
-            <span>Ort</span>
-            <input id="inLoc" placeholder="automatisch per GPS oder manuell">
-        </label>
+       <label class="grid-col-span-2">
+  <span>Startort</span>
+  <input id="inLoc" placeholder="automatisch per GPS oder manuell">
+</label>
+<label class="grid-col-span-2">
+  <span>Zielort</span>
+  <input id="inZiel" placeholder="manuell eingeben">
+</label>
+
 
         <!-- NEU: Fahrtart -->
         <label>
@@ -580,8 +586,12 @@ line(`Datum/Uhrzeit: ${dtDisplay}`);
 line(`Fahrer/in: ${document.getElementById('inOp')?.value || ''}`);
 line(`Zugmaschine: ${document.getElementById('inTr')?.value || ''} | Auflieger/Modul: ${document.getElementById('inTl')?.value || ''}`);
 
-const locVal = document.getElementById('inLoc')?.value || '';
-if (locVal) line(`Ort: ${locVal}`);
+const locVal  = document.getElementById('inLoc')?.value || '';
+const zielVal = document.getElementById('inZiel')?.value || '';
+
+if (locVal)  line(`Startort: ${locVal}`);
+if (zielVal) line(`Zielort: ${zielVal}`);
+
 
 // NEU: Fahrtart & Los
 const tripTypeVal = document.getElementById('inTripType')?.value || '';
@@ -1092,16 +1102,20 @@ const tripType   = document.getElementById('inTripType')?.value || '';
 
 
 // Body um Fahrzeugdaten erweitern
+const zielort = document.getElementById('inZiel')?.value || '';
+
 const extraInfoLines = [
-    '',
-    '--- Fahrzeugdaten ---',
-    `Fahrer/in:       ${driverName}`,
-    `Zugmaschine:     ${truck}`,
-    `Auflieger/Modul: ${trailer}`,
-    `Ort:             ${location}`,
-    `Fahrtart:        ${tripType}`
+  '',
+  '--- Fahrzeugdaten ---',
+  `Fahrer/in:       ${driverName}`,
+  `Zugmaschine:     ${truck}`,
+  `Auflieger/Modul: ${trailer}`,
+  `Startort:        ${location}`,
+  `Zielort:         ${zielort}`,
+  `Fahrtart:        ${tripType}`
 ];
 
+    
 if (lot) {
     extraInfoLines.push(`Los:             ${lot}`);
 }
@@ -1157,8 +1171,13 @@ const payload = {
 
 if (s) s.textContent = 'Sende E-Mail …';
 // --- Pflichtprüfung: Ort muss vorhanden sein ---
+// ----- Pflichtprüfung: Startort muss vorhanden sein -----
 if (!location || location.trim() === '') {
-  alert('Ort konnte nicht ermittelt werden.\nBitte GPS prüfen und erneut versuchen.');
+  alert('Startort konnte nicht ermittelt werden.\nBitte GPS prüfen und erneut versuchen.');
+  ...
+  return;
+}
+
   const s = document.getElementById('status');
   if (s) s.textContent = '';   // Statusmeldung zurücksetzen
   return;                      // Versand abbrechen
