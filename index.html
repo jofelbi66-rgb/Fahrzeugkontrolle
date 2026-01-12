@@ -1178,8 +1178,10 @@ if (!location || location.trim() === '') {
   return;
 }
 
-  const s = document.getElementById('status');
-  if (s) s.textContent = '';   // Statusmeldung zurücksetzen
+const statusEl = document.getElementById('status');
+if (statusEl) statusEl.textContent = ''; // Statusmeldung zurücksetzen
+
+ 
   return;                      // Versand abbrechen
 }
 // ------------------------------------------------
