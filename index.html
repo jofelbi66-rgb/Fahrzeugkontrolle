@@ -585,8 +585,11 @@ line(`Datum/Uhrzeit: ${dtDisplay}`);
 line(`Fahrer/in: ${document.getElementById('inOp')?.value || ''}`);
 line(`Zugmaschine: ${document.getElementById('inTr')?.value || ''} | Auflieger/Modul: ${document.getElementById('inTl')?.value || ''}`);
 
-const locVal = document.getElementById('inLoc')?.value || '';
-if (locVal) line(`Ort: ${locVal}`);
+const startVal = document.getElementById('inLoc')?.value || '';
+const zielVal  = document.getElementById('inZiel')?.value || '';
+
+if (startVal) line(`Startort: ${startVal}`);
+if (zielVal)  line(`Zielort: ${zielVal}`);
 
 // NEU: Fahrtart & Los
 const tripTypeVal = document.getElementById('inTripType')?.value || '';
