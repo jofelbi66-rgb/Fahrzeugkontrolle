@@ -588,17 +588,23 @@ line(`Zugmaschine: ${document.getElementById('inTr')?.value || ''} | Auflieger/M
 const startVal = document.getElementById('inLoc')?.value || '';
 const zielVal  = document.getElementById('inZiel')?.value || '';
 
-if (startVal) line(`Startort: ${startVal}`);
-if (zielVal)  line(`Zielort: ${zielVal}`);
+line(`Startort: ${startVal || ''} | Zielort: ${zielVal || ''}`);
+
 
 // NEU: Fahrtart & Los
 const tripTypeVal = document.getElementById('inTripType')?.value || '';
-if (tripTypeVal) line(`Fahrtart: ${tripTypeVal}`);
+
 
 const lotVal = document.getElementById('inLot')?.value || '';
-if (lotVal) line(`Los: ${lotVal}`);
+line(`Fahrtart: ${tripTypeVal || ''} | Los: ${lotVal || ''}`);
 
-if (state.geo) line(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
+
+if (state.geo) {
+  doc.setFontSize(7); // kleiner für Geotag
+  line(`Geotag: ${state.geo.lat}, ${state.geo.lon} (±${state.geo.acc} m)`);
+  doc.setFontSize(9); // zurück auf Normal
+}
+
 
 y += 3;                                          // kleinerer Abstand nach unten (vorher 5–6)
 
