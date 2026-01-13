@@ -1100,13 +1100,17 @@ const tripType   = document.getElementById('inTripType')?.value || '';
 
 
 // Body um Fahrzeugdaten erweitern
+const zielort = document.getElementById('inZiel')?.value || '';
+    
 const extraInfoLines = [
     '',
     '--- Fahrzeugdaten ---',
     `Fahrer/in:       ${driverName}`,
     `Zugmaschine:     ${truck}`,
     `Auflieger/Modul: ${trailer}`,
-    `Ort:             ${location}`,
+    `Startort:        ${location}`,
+    `Zielort:         ${zielort}`,
+
     `Fahrtart:        ${tripType}`
 ];
 
